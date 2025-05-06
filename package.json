@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@graphql-tools/schema": "^10.0.23",
+    "@graphql-tools/schema": "10.0.23",
     "@nestjs/apollo": "^13.1.0",
     "@nestjs/config": "^4.0.2",
     "@nestjs/graphql": "^13.1.0",
@@ -14,7 +14,8 @@
     "class-validator": "^0.14.2",
     "csurf": "^1.11.0",
     "dotenv": "^16.5.0",
-    "graphql": "^16.11.0",
+    "graphql": "16.11.0",
+    "graphql-yoga": "5.13.4",
     "helmet": "^8.1.0",
     "mysql2": "^3.14.1",
     "passport": "^0.7.0",
