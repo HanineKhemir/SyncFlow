@@ -1,6 +1,7 @@
-"use client"
 export default function Home() {
   return (
-   <h1>hey oussema</h1>
+    <div className="text-center text-3xl text-blue-500 mt-10">
+      Tailwind is working!
+    </div>
   );
 }

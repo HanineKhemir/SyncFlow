@@ -1,0 +1,99 @@
+.login-container {
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+    align-items: center;
+    height: 100vh;
+
+    padding: 0 20px;
+  }
+   .title {
+    font-size: 2rem;
+    color: #212f3cB; 
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    margin-bottom: 20px;
+    text-align: center; 
+    }
+
+  .logo-container{
+    flex : 1;
+    width: auto;
+    height: auto;
+    margin:0px;
+    
+  }
+.login-form {
+    flex: 1;
+    padding:80px;
+    padding-left: 20px;
+
+  }
+
+  .login-form h2 {
+    text-align: center;
+    color:  #212f3cB; 
+    margin-bottom: 20px;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: #9CAFaa; 
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid  #212f3cB;
+    border-radius: 4px;
+  }
+
+  .form-group input.input-error {
+    border-color: #e74c3c;
+  }
+
+  .error-message {
+    color: #e74c3c;
+    font-size: 0.85rem;
+    margin-top: 5px;
+  }
+
+  .login-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #82e0aa;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, border 0.3s ease;
+  }
+
+  .login-button:hover {
+    background-color:#212f3d ;
+    color:  #212f3cB;
+    border: 2px solid  #212f3cB;
+  }
+
+  .no-account {
+    margin-top: 15px;
+    text-align: center;
+  }
+
+  .no-account a {
+    color:  #212f3cB; 
+    text-decoration: none;
+    font-weight: bold;
+  }
+
+  .no-account a:hover {
+    text-decoration: underline;
+  }

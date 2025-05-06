@@ -1,10 +1,32 @@
-@import "tailwindcss";
+@import "tailwindcss/preflight";
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
   --primary: #FFFD74;
   --secondary: #aec6cf;
   --third: #ffd1dc;
 }
 
+.bg-primary {
+  background-color: var(--primary);
+}
+
+.bg-secondary {
+  background-color: var(--secondary);
+}
+
+.bg-third {
+  background-color: var(--third);
+}
+
+.text-primary {
+  color: var(--primary);
+}
+
+.text-secondary {
+  color: var(--secondary);
+}
+
+.text-third {
+  color: var(--third);
+}
