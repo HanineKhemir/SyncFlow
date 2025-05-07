@@ -1,6 +1,10 @@
 "use client"
+
+import Navbar from "./components/navbar/Navbar";
+
+
 export default function Home() {
   return (
-   <h1>hey oussema</h1>
+    <Navbar />
   );
 }
