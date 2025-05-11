@@ -7,7 +7,7 @@ import { User } from '../user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { CreateCompanyWithManagerDto } from './dto/create-company-with-manager.dto';
 import * as bcrypt from 'bcrypt';
-import { Role } from '../user/enum/role.enum';
+import { Role } from '../enum/role.enum';
 import { randomBytes } from 'crypto';
 
 @Injectable()

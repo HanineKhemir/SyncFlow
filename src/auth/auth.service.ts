@@ -6,7 +6,7 @@ import { Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { Company } from '../company/entities/company.entity';
-import { Role } from '../user/enum/role.enum';
+import { Role } from '../enum/role.enum';
 import { CreateUserDto } from './dto/create-user.dto';
 import { JwtPayload } from './jwt-payload.interface';
 

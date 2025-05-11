@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany,  } from '
 import { Company } from 'src/company/entities/company.entity';
 import { NoteLine } from 'src/note/entities/noteline.entity';
 import { Task } from 'src/task/entities/task.entity';
-import  {Role} from '../enum/role.enum';
+import  {Role} from '../../enum/role.enum';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()

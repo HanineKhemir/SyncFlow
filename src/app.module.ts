@@ -15,7 +15,8 @@ import { Task } from './task/entities/task.entity';
 import { Schedule } from './schedule/entities/schedule.entity';
 import { Company } from './company/entities/company.entity';
 import { Note } from './note/entities/note.entity';
-
+import { Operation } from './history/entities/operation.entity';
+import { HistoryModule } from './history/history.module';
 
 @Module({
   imports: [
@@ -32,12 +33,12 @@ import { Note } from './note/entities/note.entity';
           username: dbConfig.databaseUsername,
           password: dbConfig.databasePassword,
           database: dbConfig.databaseName,
-          entities: [User, Note, Task, Schedule, NoteLine, Company],
+          entities: [User, Note, Task, Schedule, NoteLine, Company, Operation],
           synchronize: true, 
         };
       },
     }),
-    NoteModule, AuthModule, UserModule, TaskModule, ScheduleModule, CompanyModule,
+    NoteModule, AuthModule, UserModule, TaskModule, ScheduleModule, CompanyModule, HistoryModule,
   ],
 })
 export class AppModule {}

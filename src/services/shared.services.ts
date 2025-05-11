@@ -10,7 +10,7 @@ import {
   FindOptionsWhere,
 } from 'typeorm';
 import { PaginationDto } from './pagination.dto';
-import { Role } from 'src/user/enum/role.enum';
+import { Role } from 'src/enum/role.enum';
 import { User } from 'src/user/entities/user.entity';
 import { use } from 'passport';
 
