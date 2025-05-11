@@ -1,15 +1,43 @@
+// src/app.module.ts
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { TasksModule } from './tasks/tasks.module';
-import { NotificationsModule } from './notifications/notifications.module';
-import { MessagesModule } from './messages/messages.module';
-import { UsersModule } from './users/users.module';
-import { SchedulesModule } from './schedules/schedules.module';
+import { TypeOrmModule  } from '@nestjs/typeorm';
+import { ConfigModule} from './config/config.module'; 
+import { ConfigService } from './config/config.service';
+import { User } from './user/entities/user.entity'; // Adjust path for your entities
+import { NoteModule } from './note/note.module';
+import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
+import { TaskModule } from './task/task.module';
+import { ScheduleModule } from './schedule/schedule.module';
+import { CompanyModule } from './company/company.module';
+import { NoteLine } from './note/entities/noteline.entity';
+import { Task } from './task/entities/task.entity';
+import { Schedule } from './schedule/entities/schedule.entity';
+import { Company } from './company/entities/company.entity';
+import { Note } from './note/entities/note.entity';
+
 
 @Module({
-  imports: [TasksModule, NotificationsModule, MessagesModule, UsersModule, SchedulesModule],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule,  // Import the ConfigModule
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
+        const dbConfig = configService.getDatabaseConfig();
+        return {
+          type: 'mysql', 
+          host: dbConfig.databaseHost,
+          port: dbConfig.databasePort,
+          username: dbConfig.databaseUsername,
+          password: dbConfig.databasePassword,
+          database: dbConfig.databaseName,
+          entities: [User, Note, Task, Schedule, NoteLine, Company],
+          synchronize: true, 
+        };
+      },
+    }),
+    NoteModule, AuthModule, UserModule, TaskModule, ScheduleModule, CompanyModule,
+  ],
 })
 export class AppModule {}
