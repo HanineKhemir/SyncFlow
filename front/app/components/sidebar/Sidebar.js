@@ -1,38 +1,62 @@
-import React from 'react';
+'use client'
+import React, { useState } from 'react';
 import Link from 'next/link';
 import styles from './Sidebar.module.css';
+import { Users, Home, Settings, BarChart, ChevronLeft, ChevronRight,UsersRound,CalendarDays } from 'lucide-react';
 
 const Sidebar = () => {
+  const [collapsed, setCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    setCollapsed(!collapsed);
+  };
+
   return (
-    <div className={styles.sidebar}>
+    <div className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}>
       <div className={styles.logo}>
-        <h2>Logo</h2>
+        <h2>{!collapsed && 'Logo'}</h2>
       </div>
+      
       <nav className={styles.nav}>
         <ul>
+        <li className={styles.navItem}>
+            <Link href="/dashboard" className={styles.navLink}>
+              <Home size={20} className={styles.icon} />
+              {!collapsed && <span className={styles.text}>Dashboard</span>}
+            </Link>
+          </li>
+          <li className={styles.navItem}>
+            <Link href="/dashboard/users" className={styles.navLink}>
+              <Users size={20} className={styles.icon} />
+              {!collapsed && <span className={styles.text}>Members</span>}
+            </Link>
+          </li>
+           <li className={styles.navItem}>
+            <Link href="/dashboard/teams" className={styles.navLink}>
+              <UsersRound size={20} className={styles.icon} />
+              {!collapsed && <span className={styles.text}>Teams</span>}
+            </Link>
+          </li>
+         
+         
+          <li className={styles.navItem}>
+            <Link href="/dashboard/calendar" className={styles.navLink}>
+              <CalendarDays size={20} className={styles.icon} />
+              {!collapsed && <span className={styles.text}>Calendar</span>}
+            </Link>
+          </li>
           <li className={styles.navItem}>
             <Link href="/" className={styles.navLink}>
-              <span className={styles.text}>1</span>
-            </Link>
-          </li>
-          <li className={styles.navItem}>
-            <Link href="/about" className={styles.navLink}>
-              <span className={styles.text}>2</span>
-            </Link>
-          </li>
-          <li className={styles.navItem}>
-            <Link href="/services" className={styles.navLink}>
-              
-              <span className={styles.text}>3</span>
-            </Link>
-          </li>
-          <li className={styles.navItem}>
-            <Link href="/contact" className={styles.navLink}>
-              <span className={styles.text}>4</span>
+              <Settings size={20} className={styles.icon} />
+              {!collapsed && <span className={styles.text}>Settings</span>}
             </Link>
           </li>
         </ul>
       </nav>
+      
+      <div className={styles.collapseBtn} onClick={toggleSidebar}>
+        {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+      </div>
     </div>
   );
 };

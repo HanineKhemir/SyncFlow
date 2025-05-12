@@ -5,6 +5,8 @@
   --primary: #FFFD74;
   --secondary: #aec6cf;
   --third: #ffd1dc;
+  --foreground: black;
+  --background:white;
 }
 
 .bg-primary {
@@ -29,4 +31,9 @@
 
 .text-third {
   color: var(--third);
+}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }

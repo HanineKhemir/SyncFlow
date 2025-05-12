@@ -1,0 +1,144 @@
+
+
+.dashboardContainer {
+    background-color: #ffffff;
+    color: #000000;
+    min-height: 100vh;
+    padding: 2rem;
+    font-family: 'Inter', 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  }
+  
+  .dashboardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #000000;
+    padding-bottom: 1rem;
+  }
+  
+
+  
+  .currentDate {
+    color: #000000;
+    font-size: 0.9rem;
+  }
+  
+  .statsContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .statCard {
+    background-color: #ffffff;
+    border-radius: 0;
+    padding: 1.2rem;
+    border: 2px solid #000000;
+    transition: transform 0.2s ease;
+  }
+  
+  .statCard:hover {
+    transform: translateY(-5px);
+  }
+  
+  .statCard h3 {
+    font-size: 0.9rem;
+    color: #000000;
+    margin: 0 0 0.5rem 0;
+    font-weight: 500;
+  }
+  
+  .statNumber {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: #000000;
+  }
+  
+  .chartContainer {
+    background-color: #ffffff;
+    border-radius: 0;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 2px solid #000000;
+  }
+  
+  .chartContainer h2 {
+    font-size: 1.2rem;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #000000;
+  }
+  
+  .chartWrapper {
+    height: 300px;
+    width: 100%;
+  }
+  
+  .recentActivity {
+    background-color: #ffffff;
+    border-radius: 0;
+    padding: 1.5rem;
+    border: 2px solid #000000;
+  }
+  
+  .recentActivity h2 {
+    font-size: 1.2rem;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #000000;
+  }
+  
+  .activityList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .activityItem {
+    display: flex;
+    padding: 0.8rem;
+    background-color: #ffffff;
+    border: 1px solid #000000;
+  }
+  
+  .activityTime {
+    font-size: 0.85rem;
+    color: #000000;
+    min-width: 80px;
+  }
+  
+  .activityText {
+    font-size: 0.9rem;
+    color: #000000;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .dashboardContainer {
+      padding: 1rem;
+    }
+    
+    .statsContainer {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .dashboardHeader {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .statsContainer {
+      grid-template-columns: 1fr;
+    }
+    
+    .activityItem {
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+  }

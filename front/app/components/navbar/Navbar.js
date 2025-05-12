@@ -12,7 +12,7 @@ const Navbar = () => {
           </Link>
         </div>
         <div className={styles.authSection}>
-          <Link href="/signin">
+          <Link href="/Login">
             <button className={styles.signInButton}>Sign In</button>
           </Link>
         </div>
