@@ -6,13 +6,13 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from './decorator/roles.decorator';
+import { Role } from 'src/enum/role.enum';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
-
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
+    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
@@ -31,10 +31,7 @@ export class RolesGuard implements CanActivate {
     if (!requiredRoles.includes(user.role)) {
       throw new ForbiddenException(`Access denied: role ${user.role} is not permitted.`);
     }
-
-    // If you want to check against specific companyCode, you could enhance this
-    // For now, we assume the JWT includes correct companyId
-
+  
     return true;
   }
 }

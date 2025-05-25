@@ -9,6 +9,8 @@ import { CreateCompanyWithManagerDto } from './dto/create-company-with-manager.d
 import * as bcrypt from 'bcrypt';
 import { Role } from '../enum/role.enum';
 import { randomBytes } from 'crypto';
+import { CreateEventService } from 'src/history/create-event.service';
+import { OperationType } from 'src/enum/operation-type';
 
 @Injectable()
 export class CompanyService {
@@ -16,7 +18,8 @@ export class CompanyService {
     @InjectRepository(Company)
     private companyRepository: Repository<Company>,
     @InjectRepository(User)
-    private userRepository: Repository<User>
+    private userRepository: Repository<User>,
+    private readonly createEventService: CreateEventService,
   ) {}
 
   async createCompanyWithManager(dto: CreateCompanyWithManagerDto): Promise<Company> {
@@ -50,6 +53,11 @@ export class CompanyService {
     });
 
     await this.userRepository.save(manager);
+    this.createEventService.createEvent({
+      type: OperationType.CREATE,
+      userId : manager.id,
+      data: manager});
+
 
     return savedCompany;
   }

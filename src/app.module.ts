@@ -17,10 +17,11 @@ import { Company } from './company/entities/company.entity';
 import { Note } from './note/entities/note.entity';
 import { Operation } from './history/entities/operation.entity';
 import { HistoryModule } from './history/history.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
-    ConfigModule,  // Import the ConfigModule
+    ConfigModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -38,6 +39,7 @@ import { HistoryModule } from './history/history.module';
         };
       },
     }),
+    EventEmitterModule.forRoot(),
     NoteModule, AuthModule, UserModule, TaskModule, ScheduleModule, CompanyModule, HistoryModule,
   ],
 })

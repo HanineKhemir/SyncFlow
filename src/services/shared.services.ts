@@ -43,7 +43,7 @@ export class SharedService<T extends ObjectLiteral> {
     }
   }
 
-  async findOne(id: number): Promise<T > {
+  async findOne(id: number): Promise<T | null > {
     try {
       const where = { id } as unknown as FindOptionsWhere<T>;
       const entity = await this.repository.findOne({ where });
@@ -61,7 +61,7 @@ export class SharedService<T extends ObjectLiteral> {
     }
   }
 
-  async create(data: DeepPartial<T>,userID?): Promise<T> {
+  async create(data: DeepPartial<T>,userID?): Promise<T | null> {
     try {
       const entity = this.repository.create(data);
       return await this.repository.save(entity);
@@ -75,7 +75,7 @@ export class SharedService<T extends ObjectLiteral> {
     }
   }
 
-  async update(id: number, data: DeepPartial<T>,userID?): Promise<T> {
+  async update(id: number, data: DeepPartial<T>,userID?): Promise<T | null> {
     const entity = await this.findOne(id);
     if (!entity) {
       throw new NotFoundException(`Entity with id ${id} not found`);

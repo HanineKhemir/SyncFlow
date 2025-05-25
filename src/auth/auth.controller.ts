@@ -9,13 +9,14 @@ import { JwtPayload } from './jwt-payload.interface';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import path from 'path';
 import { LoginDto } from './dto/login.dto';
+import { Role } from 'src/enum/role.enum';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
   @UseGuards(JwtAuthGuard) 
   @Post('create-user')
-  @Roles(['MANAGER']) 
+  @Roles([Role.MANAGER]) 
   async createUser(
     @Body() createUserDto: CreateUserDto,
     @ConnectedUser() manager: JwtPayload
