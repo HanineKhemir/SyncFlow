@@ -7,37 +7,28 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../user/entities/user.entity'; // Adjust path
+import { JwtExtractorService } from './Jwt.extractor.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
-    @InjectRepository(User) private userRepository: Repository<User>
+    private readonly Extractor: JwtExtractorService
   ) {
     const secret = configService.get<string>('JWT_SECRET');
-    
+
     if (!secret) {
       throw new Error('JWT_SECRET is not defined in the .env file');
     }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: secret, 
+      secretOrKey: secret,
     });
   }
 
   async validate(payload: JwtPayload) {
-    const { sub: userId, username, companyCode } = payload;
-
-    const user = await this.userRepository.findOne({
-      where: { id: userId, username },
-      relations: ['company'], 
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-    return { userId: user.id, username: user.username, companyCode: user.company?.code };
+    return this.Extractor.validatePayload(payload);
   }
 }

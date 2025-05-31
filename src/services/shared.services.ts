@@ -13,10 +13,18 @@ import { PaginationDto } from './pagination.dto';
 import { Role } from 'src/enum/role.enum';
 import { User } from 'src/user/entities/user.entity';
 import { use } from 'passport';
+import { CreateEventService } from 'src/history/create-event.service';
+import { OperationType } from 'src/enum/operation-type';
+import { Note } from 'src/note/entities/note.entity';
+import { NoteLine } from 'src/note/entities/noteline.entity';
+import { Schedule } from 'src/schedule/entities/schedule.entity';
+import { Task } from 'src/task/entities/task.entity';
 
 @Injectable()
 export class SharedService<T extends ObjectLiteral> {
-  constructor(protected readonly repository: Repository<T>) {}
+  constructor(protected readonly repository: Repository<T>, private readonly createEventService: CreateEventService) {
+    
+  }
 
   async findAll(filter? : PaginationDto,user?:any): Promise<T[]> {
     try {
@@ -61,10 +69,19 @@ export class SharedService<T extends ObjectLiteral> {
     }
   }
 
-  async create(data: DeepPartial<T>,userID?): Promise<T | null> {
+  async create(data: DeepPartial<T>,userID : number): Promise<T | null> {
     try {
-      const entity = this.repository.create(data);
-      return await this.repository.save(entity);
+      const entityt = this.repository.create(data);
+      const entity =  await this.repository.save(entityt);
+      if(!(entity instanceof Note || entity instanceof NoteLine || entity instanceof Schedule || entity instanceof Task || entity instanceof User)) {
+        throw new InternalServerErrorException('Invalid entity type for creation');
+      }
+      this.createEventService.createEvent({
+        type: OperationType.CREATE,
+        userId : userID,
+        data: entity 
+      });
+      return entity;
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -84,7 +101,16 @@ export class SharedService<T extends ObjectLiteral> {
       ...entity,
       ...data,
     });
-    return this.repository.save(updated);
+    if(!(entity instanceof Note || entity instanceof NoteLine || entity instanceof Schedule || entity instanceof Task || entity instanceof User)) {
+        throw new InternalServerErrorException('Invalid entity type for creation');
+      }
+    const savedentity = this.repository.save(updated);
+    this.createEventService.createEvent({
+        type: OperationType.CREATE,
+        userId : userID,
+        data: entity 
+      });
+    return savedentity;
   }
 
   async delete(id: number,userID?): Promise<void> {

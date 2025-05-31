@@ -9,15 +9,24 @@ import { Company } from '../company/entities/company.entity';
 import { Role } from '../enum/role.enum';
 import { CreateUserDto } from './dto/create-user.dto';
 import { JwtPayload } from './jwt-payload.interface';
-
+import { CreateEventService } from 'src/history/create-event.service';
+import { OperationType } from 'src/enum/operation-type';
+import { Operation } from 'src/history/entities/operation.entity';
+import { UserService } from 'src/user/user.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { CreateOperationDto } from 'src/history/dto/create-operation.dto';
+import { Target } from 'src/enum/target.enum';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    private jwtService: JwtService
-  ) {}
+    private jwtService: JwtService,
+    @InjectRepository(Operation)
+    private eventRepository: Repository<Operation>,
+    private eventEmitter: EventEmitter2
+    ) {}
 async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<User> {
   const { username, password, role } = createUserDto;
 
@@ -42,7 +51,24 @@ async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<Use
     role: role ?? Role.USER,
   });
 
-  return this.userRepository.save(user);
+  const managerUser = await this.userRepository.findOne({ where: { id: manager.sub } });
+  if (!managerUser) {
+    throw new UnauthorizedException('Manager user not found');
+  }
+  const savedUser =  await this.userRepository.save(user);
+  const op: CreateOperationDto = {
+      type: OperationType.CREATE,
+      description: JSON.stringify(savedUser),
+      performedBy: managerUser,
+      target: savedUser.id,
+      targettype: Target.USER,
+      date: new Date(),
+    };
+  
+    const newEvent = this.eventRepository.create(op);
+    await this.eventRepository.save(newEvent);
+    this.eventEmitter.emit(`event.created.${user.company?.code}`, newEvent);
+  return savedUser;
 }
   async login(loginDto: LoginDto): Promise<{ access_token: string }> {
     const { username, password, companyCode } = loginDto;
@@ -55,8 +81,11 @@ async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<Use
     }
 
     const user = await this.userRepository.findOne({ 
-      where: { username, company: { id: company.id } } 
+      where: { username, company: { id: company.id } },
+      relations: ['company']
     });
+    console.log('User found:', user);
+    console.log(password);
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Identifiants invalides');

@@ -7,12 +7,12 @@ import { Repository } from 'typeorm';
 import { SharedService } from 'src/services/shared.services';
 
 @Injectable()
-export class UserService extends SharedService<User>{
-  constructor(@InjectRepository(User) repo : Repository<User>) {
-    super(repo);
+export class UserService {
+  @InjectRepository(User) private readonly repository : Repository<User>
+  constructor() {
   }
   findOne(id: number) : Promise<User| null> {
-    return this.repository.findOne({where: {id}});
+    return this.repository.findOne({where: {id}, relations: ['company']});
   }
 
 }

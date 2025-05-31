@@ -1,1 +1,1 @@
-export class CreateNoteDto {}
+export class CreateNoteDto  {}

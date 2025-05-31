@@ -22,12 +22,12 @@ export class NoteLine {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
 
-  @Column({ nullable: true })
+  @Column({default: '#000000' })
   color: string;
 
-  @Column({ nullable: true })
+  @Column({default: 16 })
   fontSize: number;
   
-  @Column({ nullable: true })
+  @Column({ default: false })
   highlighted: boolean;
 }

@@ -11,14 +11,16 @@ import { ConfigService } from '../config/config.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
 import { Company } from '../company/entities/company.entity';
+import { JwtExtractorService } from './Jwt.extractor.service';
+import { HistoryModule } from 'src/history/history.module';
+import { Operation } from 'src/history/entities/operation.entity';
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), TypeOrmModule.forFeature([User]),PassportModule.register({ defaultStrategy: 'jwt' }), JwtModule.register({
+  imports: [TypeOrmModule.forFeature([User, Operation]),PassportModule.register({ defaultStrategy: 'jwt' }), JwtModule.register({
     secret: process.env.JWT_SECRET,
     signOptions: { expiresIn: '1h' },
   })],
-  exports: [AuthService],
-  providers: [AuthService, JwtStrategy],
-
+  exports: [AuthService, JwtExtractorService],
+  providers: [AuthService, JwtStrategy, JwtExtractorService],
   controllers: [AuthController]
 })
 export class AuthModule {}
