@@ -23,39 +23,56 @@ export class CreateEventService {
   ) {}
 
   async createEvent(eventData: OperationDto) {
-    const user = await this.UserService.findOne(eventData.userId);
-    if (!user) {
-      throw new Error('User not found');
-    }
-    console.log('Creating event with data:', eventData);
-    let targetType: Target;
-    let data = eventData.data;
-    if (data instanceof User) {
-      targetType = Target.USER;
-    } else if (data instanceof Task) {
-      targetType = Target.TASK;
-    } else if (data instanceof Schedule) {
-      targetType = Target.SCHEDULE;
-    } else if (data instanceof Note) {
-      targetType = Target.NOTE;
-    } else if (data instanceof NoteLine) {
-      targetType = Target.NOTELINE;
-    }else {
-      throw new Error('Could not determine target type');
-    }; 
-    const op: CreateOperationDto = {
-        type :eventData.type,
-        description : JSON.stringify(eventData.data),
-        performedBy :user,
-        target : eventData.data.id,
-        targettype : targetType,
-        date : new Date(),
-    };
-    const newEvent = this.eventRepository.create(op);
-    await this.eventRepository.save(newEvent);
-    console.log('Event created:', newEvent);
-    this.eventEmitter.emit('event.created', newEvent);
+  const user = await this.UserService.findOne(eventData.userId); 
+
+  if (!user) {
+    throw new Error('User not found');
   }
+
+  let targetType: Target;
+  let data = eventData.data;
+  let restData: any;
+
+  if (data instanceof User) {
+    targetType = Target.USER;
+    const { company, ...rest } = data;
+    restData = rest;
+  } else if (data instanceof Task) {
+    targetType = Target.TASK;
+    const { company, ...rest } = data;
+    restData = rest;
+  } else if (data instanceof Schedule) {
+    targetType = Target.SCHEDULE;
+    const { company, ...rest } = data;
+    restData = rest;
+  } else if (data instanceof Note) {
+    targetType = Target.NOTE;
+    const { company, ...rest } = data;
+    restData = rest;
+  } else if (data instanceof NoteLine) {
+    targetType = Target.NOTELINE;
+    const { note, ...rest } = data;
+    restData = rest;
+  } else {
+    throw new Error('Could not determine target type');
+  }
+
+
+  const op: CreateOperationDto = {
+    type: eventData.type,
+    description: JSON.stringify(restData),
+    performedBy: user,
+    target: eventData.data.id,
+    targettype: targetType,
+    date: new Date(),
+  };
+
+  const newEvent = this.eventRepository.create(op);
+  await this.eventRepository.save(newEvent);
+  console.log('Event created:', newEvent);
+  this.eventEmitter.emit(`event.created.${user.company?.code}`, newEvent);
+}
+
 
 //   async getEventById(id: string): Promise<Event | null> {
 //     const event = await this.eventRepository.findById(id);

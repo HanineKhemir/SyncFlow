@@ -1,4 +1,4 @@
-import { Controller, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Param, UseGuards } from '@nestjs/common';
 import { Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Roles } from './decorator/roles.decorator';
@@ -10,13 +10,14 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import path from 'path';
 import { LoginDto } from './dto/login.dto';
 import { Role } from 'src/enum/role.enum';
+import { RolesGuard } from './role-guard';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-  @UseGuards(JwtAuthGuard) 
-  @Post('create-user')
+  @UseGuards(JwtAuthGuard, RolesGuard) 
   @Roles([Role.MANAGER]) 
+  @Post('create-user')
   async createUser(
     @Body() createUserDto: CreateUserDto,
     @ConnectedUser() manager: JwtPayload
@@ -26,5 +27,14 @@ export class AuthController {
   @Post('login')
   async login(@Body() loginDto: LoginDto): Promise<{ access_token: string }> {
     return this.authService.login(loginDto);
+  }
+  @Delete('delete-user/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([Role.MANAGER])
+  async deleteUser(
+    @ConnectedUser() manager: JwtPayload,
+    @Param('id') id: number
+  ) {
+    return this.authService.deleteUser(id, manager);
   }
 }

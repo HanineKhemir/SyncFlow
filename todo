@@ -1,0 +1,5 @@
+-[x] integrate events into shared.service 
+-[x] fix the event for history so that it includes the company code
+ [x] in the same contex fix the dto to inclued company code from the jwt payload
+-[x] make sure when company is created so are notes, and stuff
+-[x] fix role guard like the dumbass you are

@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, DeleteDateColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Note } from '../../note/entities/note.entity';
 import { Task } from '../../task/entities/task.entity';
@@ -10,7 +10,7 @@ export class NoteLine {
   @Column()
   lineNumber: number;
 
-  @Column()
+  @Column({default: ''})
   content: string;
 
   @ManyToOne(() => Note, note => note.lines)
@@ -22,12 +22,14 @@ export class NoteLine {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
 
-  @Column({ nullable: true })
+  @Column({default: '#000000' })
   color: string;
 
-  @Column({ nullable: true })
+  @Column({default: 16 })
   fontSize: number;
   
-  @Column({ nullable: true })
+  @Column({ default: false })
   highlighted: boolean;
+  @DeleteDateColumn()
+  deletedAt?: Date;
 }

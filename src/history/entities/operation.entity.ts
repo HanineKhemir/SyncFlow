@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, DeleteDateColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Target } from 'src/enum/target.enum';
 import { OperationType } from 'src/enum/operation-type';
+import { Company } from 'src/company/entities/company.entity';
 @Entity()
 export class Operation {
   @PrimaryGeneratedColumn()
@@ -25,4 +26,11 @@ export class Operation {
   @ManyToOne(() => User)
   @JoinColumn()
   performedBy: User;
+
+  @ManyToOne(() => Company)
+  @JoinColumn()
+  company: Company;
+
+  @DeleteDateColumn()
+  deletedAt?: Date;
 }

@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany,  } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, DeleteDateColumn,  } from 'typeorm';
 import { Company } from 'src/company/entities/company.entity';
 import { NoteLine } from 'src/note/entities/noteline.entity';
 import { Task } from 'src/task/entities/task.entity';
@@ -30,6 +30,9 @@ export class User {
 
   @Column({type:'enum', enum: Role, default: Role.USER})
   role: Role;
+  
+  @DeleteDateColumn()
+  deletedAt?: Date;
 
 
   @OneToMany(() => Event, event => event.user)

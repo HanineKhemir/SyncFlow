@@ -40,7 +40,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       },
     }),
     EventEmitterModule.forRoot(),
-    NoteModule, AuthModule, UserModule, TaskModule, ScheduleModule, CompanyModule, HistoryModule,
+    NoteModule, AuthModule, UserModule, TaskModule, ScheduleModule, CompanyModule, HistoryModule
   ],
 })
 export class AppModule {}
