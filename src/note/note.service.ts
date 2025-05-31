@@ -25,4 +25,12 @@ export class NoteService extends SharedService<Note>{
         return note ? note.lines.length : 0;
 }
 
+async getNoteById(noteId: number): Promise<Note | null> {
+  const temp = await this.repo.findOne({
+    where: { id: noteId },
+    relations: ['company'],
+  });
+    return temp;
+  }
+
 }

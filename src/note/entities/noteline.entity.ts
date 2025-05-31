@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, DeleteDateColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Note } from '../../note/entities/note.entity';
 import { Task } from '../../task/entities/task.entity';
@@ -30,4 +30,6 @@ export class NoteLine {
   
   @Column({ default: false })
   highlighted: boolean;
+  @DeleteDateColumn()
+  deletedAt?: Date;
 }

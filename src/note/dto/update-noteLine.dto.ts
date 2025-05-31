@@ -9,4 +9,5 @@ export class UpdateNoteLineDto extends PartialType(CreateNoteDto) {
   fontSize?: number;
   highlighted?: boolean;
     id: number | undefined;
+  lastupdatedBy?: string;
 }

@@ -14,5 +14,8 @@ export class UserService {
   findOne(id: number) : Promise<User| null> {
     return this.repository.findOne({where: {id}, relations: ['company']});
   }
+  getUserById(id: number) : Promise<User| null> {
+    return this.repository.findOne({where: {id}});
+  }
 
 }
