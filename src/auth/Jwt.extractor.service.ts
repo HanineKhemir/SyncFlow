@@ -23,9 +23,10 @@ export class JwtExtractorService {
     }
 
     return {
-      userId: user.id,
+      sub: user.id,
       username: user.username,
       companyCode: user.company?.code,
+      role : user.role,
     };
   }
 }

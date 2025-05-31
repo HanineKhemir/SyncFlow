@@ -56,15 +56,15 @@ async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<Use
     throw new UnauthorizedException('Manager user not found');
   }
   const savedUser =  await this.userRepository.save(user);
+  const {company:companylol, ...actdata} = savedUser;
   const op: CreateOperationDto = {
       type: OperationType.CREATE,
-      description: JSON.stringify(savedUser),
+      description: JSON.stringify(actdata),
       performedBy: managerUser,
       target: savedUser.id,
       targettype: Target.USER,
       date: new Date(),
     };
-  
     const newEvent = this.eventRepository.create(op);
     await this.eventRepository.save(newEvent);
     this.eventEmitter.emit(`event.created.${user.company?.code}`, newEvent);

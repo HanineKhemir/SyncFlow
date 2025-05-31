@@ -17,7 +17,7 @@ import { Operation } from 'src/history/entities/operation.entity';
 @Module({
   imports: [TypeOrmModule.forFeature([User, Operation]),PassportModule.register({ defaultStrategy: 'jwt' }), JwtModule.register({
     secret: process.env.JWT_SECRET,
-    signOptions: { expiresIn: '1h' },
+    signOptions: { expiresIn: process.env.JWT_EXPIRATION || '1h' },
   })],
   exports: [AuthService, JwtExtractorService],
   providers: [AuthService, JwtStrategy, JwtExtractorService],

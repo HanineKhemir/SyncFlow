@@ -7,6 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from './decorator/roles.decorator';
 import { Role } from 'src/enum/role.enum';
+import { JwtPayload } from './jwt-payload.interface';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -22,9 +23,9 @@ export class RolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    const user = request.user;
-
-    if (!user || !user.role || !user.companyId) {
+    const user = request.user as JwtPayload;
+    console.log('User in RolesGuard:', user);
+    if (!user || !user.role || !user.companyCode) {
       throw new ForbiddenException('Access denied: no valid user or company context.');
     }
 

@@ -57,6 +57,7 @@ export class CreateEventService {
     throw new Error('Could not determine target type');
   }
 
+
   const op: CreateOperationDto = {
     type: eventData.type,
     description: JSON.stringify(restData),
@@ -68,6 +69,7 @@ export class CreateEventService {
 
   const newEvent = this.eventRepository.create(op);
   await this.eventRepository.save(newEvent);
+  console.log('Event created:', newEvent);
   this.eventEmitter.emit(`event.created.${user.company?.code}`, newEvent);
 }
 

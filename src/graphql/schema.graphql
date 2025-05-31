@@ -1,0 +1,73 @@
+scalar Date
+
+enum Role {
+  ADMIN
+  USER
+  MANAGER
+}
+
+enum OperationType {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum Target {
+  USER
+  COMPANY
+  TASK
+  NOTELINE
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+type User {
+  username: String!
+  password: String!
+  company: Company!
+  editedLines: [NoteLine!]!
+  tasks: [Task!]!
+  role: Role!
+}
+
+type Operation {
+  id: Int!
+  type: OperationType!
+  date: Date!
+  targettype: Target!
+  target: Int!
+  performedBy: User!
+}
+
+type Company {
+  id: ID!
+  name: String!
+  users: [User!]!
+}
+
+type NoteLine {
+  id: ID!
+  content: String!
+  author: User!
+  createdAt: Date!
+  updatedAt: Date
+}
+
+type Task {
+  id: ID!
+  title: String!
+  description: String
+  assignedTo: User
+  status: TaskStatus!
+  dueDate: Date
+}
+
+type Query {
+  hello: String
+  users: [User!]!
+  history: [Operation!]!
+}

@@ -10,7 +10,7 @@ export class NoteLine {
   @Column()
   lineNumber: number;
 
-  @Column()
+  @Column({default: ''})
   content: string;
 
   @ManyToOne(() => Note, note => note.lines)

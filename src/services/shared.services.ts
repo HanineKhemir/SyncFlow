@@ -21,7 +21,7 @@ import { Schedule } from 'src/schedule/entities/schedule.entity';
 import { Task } from 'src/task/entities/task.entity';
 
 @Injectable()
-export class SharedService<T extends ObjectLiteral> {
+export class SharedService<T extends Note | NoteLine | Schedule | Task | User> {
   constructor(protected readonly repository: Repository<T>, private readonly createEventService: CreateEventService) {
     
   }
@@ -92,26 +92,39 @@ export class SharedService<T extends ObjectLiteral> {
     }
   }
 
-  async update(id: number, data: DeepPartial<T>,userID?): Promise<T | null> {
-    const entity = await this.findOne(id);
-    if (!entity) {
-      throw new NotFoundException(`Entity with id ${id} not found`);
-    }
-    const updated = this.repository.create({
-      ...entity,
-      ...data,
-    });
-    if(!(entity instanceof Note || entity instanceof NoteLine || entity instanceof Schedule || entity instanceof Task || entity instanceof User)) {
-        throw new InternalServerErrorException('Invalid entity type for creation');
-      }
-    const savedentity = this.repository.save(updated);
-    this.createEventService.createEvent({
-        type: OperationType.CREATE,
-        userId : userID,
-        data: entity 
-      });
-    return savedentity;
+  async update(id: number, data: DeepPartial<T>, userID?): Promise<DeepPartial<T> | null> {
+  const entity = await this.findOne(id);
+  console.log('Entity found for update:', entity);
+  if (!entity) {
+    throw new NotFoundException(`Entity with id ${id} not found`);
   }
+
+  // Merge only the provided fields into the entity
+  console.log('Data to update:', data);
+  if (
+    !(
+      entity instanceof Note ||
+      entity instanceof NoteLine ||
+      entity instanceof Schedule ||
+      entity instanceof Task ||
+      entity instanceof User
+    )
+  ) {
+    throw new InternalServerErrorException('Invalid entity type for update');
+  }
+  const updated = this.repository.merge(entity, data);
+  console.log('Updated entity:', updated);
+  const savedEntity = await this.repository.save(updated);
+
+  this.createEventService.createEvent({
+    type: OperationType.UPDATE,  
+    userId: userID,
+    data: savedEntity,
+  });
+
+  return savedEntity;
+}
+
 
   async delete(id: number,userID?): Promise<void> {
     const result = await this.repository.softDelete(id);
