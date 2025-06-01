@@ -2,7 +2,7 @@
 export const Task = {
   async assignedTo(parent: any, _args: any, context: any) {
     if (!parent.assignedTo?.id) return null;
-    return context.userService.getUserById(parent.assignedTo.id);
+    return context.userService.findOne(parent.assignedTo.id);
   },
 
   async company(parent: any, _args: any, context: any) {

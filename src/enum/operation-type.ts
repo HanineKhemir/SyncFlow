@@ -1,5 +1,6 @@
 export enum OperationType {
   CREATE = 'CREATE',
   UPDATE = 'UPDATE',
-  DELETE = 'DELETE'
+  DELETE = 'DELETE',
+  RECOVER = 'RECOVER'
 }

@@ -35,7 +35,7 @@ export class User {
   deletedAt?: Date;
 
 
- // @OneToMany(() => Event, event => event.user)
+  //@OneToMany(() => Event, event => event.user)
   //events: Event[];
  
 }

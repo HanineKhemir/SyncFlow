@@ -9,6 +9,7 @@ enum OperationType {
   CREATE
   UPDATE
   DELETE
+  RECOVERED
 }
 
 enum Target {
@@ -33,6 +34,7 @@ type User {
   editedLines: [NoteLine!]!
   tasks: [Task!]!
   role: Role!
+  deletedAt: Date
 }
 
 type Operation {
@@ -68,6 +70,7 @@ type Task {
   description: String
   dueDate: Date!
   completed: Boolean!
+  createdAt: Date!
   assignedTo: User
   company: Company!
 }
@@ -88,9 +91,25 @@ input UpdateTaskInput {
   completed: Boolean
 }
 
+input CreateUserInput {
+  username: String!
+  password: String!
+  role: Role
+}
+
+input UpdateUserInput {
+  username: String
+  password: String
+  role: Role
+}
+
 type Query {
   hello: String
   users: [User!]!
+  user(id: ID!): User
+  userByUsername(username: String!, companyId: ID!): User
+  usersByCompany(companyId: ID!): [User!]!
+  deletedUsers: [User!]!
   operation(limit:Int, start:Int): [Operation!]!
   NoteLines(noteId: ID!, limit:Int, start:Int): [NoteLine!]!
   operationBytargetType(targetType: Target!, start:Int, limit:Int): [Operation]!
@@ -106,4 +125,7 @@ type Mutation {
   createTask(input: CreateTaskInput!): Task!
   updateTask(id: ID!, input: UpdateTaskInput!): Task!
   deleteTask(id: ID!): Boolean!
+  updateUser(id: ID!, input: UpdateUserInput!): User!
+  deleteUser(id: ID!): Boolean!
+  recoverUser(id: ID!): User!
 }
