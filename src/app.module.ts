@@ -30,6 +30,7 @@ import { EventsModule } from './events/events.module'; // ← your new module
 @Module({
   imports: [
     ConfigModule,
+    EventsModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

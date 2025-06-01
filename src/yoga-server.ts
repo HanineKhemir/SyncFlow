@@ -20,6 +20,7 @@ import { ConfigService } from '@nestjs/config';
 import { Operation, NoteLine } from './graphql/resolvers/fieldresolvers';
 import { TaskQuery , TaskMutation,Task} from './graphql/resolvers/task.resolvers';
 import { TaskService } from './task/task.service';
+import { EventsService } from './events/events.service';
 
     
 export function createYogaServer(app: INestApplicationContext) {
@@ -80,6 +81,7 @@ if (token) {
 
       return {
         user, 
+        eventsService: app.get(EventsService),
         noteService,
         noteLineService,
         userService,

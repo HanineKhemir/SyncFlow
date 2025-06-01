@@ -100,12 +100,13 @@ type Query {
   task(id: ID!): Task
   tasksByUser(userId: ID!): [Task!]!
   tasksByCompany(companyId: ID!): [Task!]!
+  allEventTitles: [String!]!
+  eventTitlesByDate(date: Date!): [String!]!
 }
 
 type Mutation {
   createTask(input: CreateTaskInput!): Task!
   updateTask(id: ID!, input: UpdateTaskInput!): Task!
   deleteTask(id: ID!): Boolean!
-  allEventTitles: [String!]!        
-  eventTitlesByDate(date: Date!): [String!]!   
+  
 }
