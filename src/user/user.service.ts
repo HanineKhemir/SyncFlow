@@ -17,5 +17,10 @@ export class UserService {
   getUserById(id: number) : Promise<User| null> {
     return this.repository.findOne({where: {id}});
   }
+  async findOneByUsername(username: string, companyId:number) : Promise<User| null> {
+    return this.repository.findOne({
+      where: { username, company: { id: companyId } },
+    });
+  }
 
 }

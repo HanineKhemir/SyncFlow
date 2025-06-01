@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, DeleteDateColumn } from 'typeorm';
 import { Company } from '../../company/entities/company.entity';
 import { User } from '../../user/entities/user.entity';
 import { text } from 'express';
@@ -24,4 +24,7 @@ export class Task {
 
   @Column({ default: false })
   completed: boolean;
+
+  @DeleteDateColumn()
+  deletedAt?: Date;
 }

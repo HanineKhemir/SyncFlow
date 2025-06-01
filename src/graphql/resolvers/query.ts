@@ -1,3 +1,5 @@
+import { Target } from "src/enum/target.enum";
+
 export const Query = {
     hello: (_parent: any, _args: any, _context) => {
         return 'Hello World!';
@@ -25,5 +27,23 @@ export const Query = {
         }
         const notelines = await context.noteLineService.getNoteLinesByNoteId(_args.noteId, _args.limit, _args.start);
         return notelines;
+    },
+    async operationBytargetType(_parent: any, _args: {targetType: string, start: number, limit: number}, context) {
+        if (context.user.role !== 'manager') {
+            throw new Error('Access denied: Only managers can view history');
+        }
+        return context.historyService.getHistoryByTargetType(context.user.companyCode, _args.targetType, _args.start, _args.limit);
+    },
+    async operationByUser(_parent: any, _args: {username: number, start: number, limit: number}, context) {
+        if (context.user.role !== 'manager') {
+            throw new Error('Access denied: Only managers can view history');
+        }
+        return context.historyService.getHistoryByUser(context.user.companyCode, _args.username, _args.start, _args.limit);
+    },
+    async OperationByTarget(_parent: any, _args: {targetType:Target, targetId: number}, context) {
+        if (context.user.role !== 'manager') {
+            throw new Error('Access denied: Only managers can view history');
+        }
+        return context.historyService.getHistoryById(context.user.companyCode, _args.targetType, _args.targetId);
     }
 }

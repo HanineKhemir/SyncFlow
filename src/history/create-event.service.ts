@@ -65,6 +65,7 @@ export class CreateEventService {
     target: eventData.data.id,
     targettype: targetType,
     date: new Date(),
+    company: user.company,
   };
 
   const newEvent = this.eventRepository.create(op);

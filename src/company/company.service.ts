@@ -76,9 +76,7 @@ export class CompanyService {
       Note.lines.push(noteLine);
     }
     Note.lineCount = Note.lines.length;
-    await this.NoteService.update(Note.id, Note, manager.id);
-
-    
+    await this.NoteService.updateWithoutEvent(Note.id, Note, manager.id);
 
     return savedCompany;
   }
@@ -87,4 +85,7 @@ export class CompanyService {
     return this.companyRepository.findOne({ where: { code } });
   }
   
+  async getCompanyById(id: number): Promise<Company | null> {
+    return this.companyRepository.findOne({ where: { id } });
+  }
 }

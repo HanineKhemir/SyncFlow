@@ -28,45 +28,4 @@ export class TaskController {
     return stream;
   }
 
-  @Post()
-  create(
-    @Body() createTaskDto: CreateTaskDto,
-    @ConnectedUser() user: JwtPayload
-  ) {
-    return this.taskService.create(createTaskDto, user);
-  }
-
-  @Get()
-  findAll(@ConnectedUser() user: JwtPayload) {
-    return this.taskService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string, @ConnectedUser() user: JwtPayload) {
-    return this.taskService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string, 
-    @Body() updateTaskDto: UpdateTaskDto,
-    @ConnectedUser() user: JwtPayload
-  ) {
-    return this.taskService.update(+id, updateTaskDto, user);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string, @ConnectedUser() user: JwtPayload) {
-    return this.taskService.remove(+id, user);
-  }
-
-  @Get('user/:userId')
-  getTasksByUser(@Param('userId') userId: string) {
-    return this.taskService.getTasksByUser(+userId);
-  }
-
-  @Get('company/:companyId')
-  getTasksByCompany(@Param('companyId') companyId: string) {
-    return this.taskService.getTasksByCompany(+companyId);
-  }
 }

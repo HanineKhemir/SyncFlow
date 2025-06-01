@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CompanyService } from 'src/company/company.service';
 import { Company } from 'src/company/entities/company.entity';
+import { Target } from 'src/enum/target.enum';
 
 @Injectable()
 export class HistoryService {
@@ -50,7 +51,7 @@ export class HistoryService {
     const raw  = await this.repo
       .createQueryBuilder('operation')
       .where('operation.companyId = :companyId', { companyId: company.id })
-      .where("deletedAt IS NULL")
+      .andWhere("deletedAt IS NULL")
       .select(['operation.id', 'operation.type', 'operation.date', 'operation.description', "operation.targettype", "operation.target"])
       .addSelect('operation.performedById', 'performedById')
       .orderBy('operation.id', 'ASC')
@@ -71,4 +72,108 @@ export class HistoryService {
     return operations;
 
   }
+  async getHistoryByTargetType(companyCode: string, targetType: string, limit: number = 0, start: number = 0): Promise<any[]> {
+    const company = await this.companyRepo.findOne({
+      where: { code: companyCode },
+    });
+    if (!company) {
+      throw new Error('Company not found');
+    }
+    console.log(targetType)
+
+    const raw = await this.repo
+      .createQueryBuilder('operation')
+      .where('operation.companyId = :companyId', { companyId: company.id })
+      .andWhere('operation.targettype = :targetType', { targetType: targetType })
+      .andWhere("deletedAt IS NULL")
+      .select(['operation.id', 'operation.type', 'operation.date', 'operation.description', "operation.targettype", "operation.target"])
+      .addSelect('operation.performedById', 'performedById')
+      .orderBy('operation.id', 'ASC')
+      .take(limit > 0 ? limit : undefined)
+      .skip(start > 0 ? start : undefined)
+      .getRawMany();
+
+    const operations =
+      raw.map((item) => ({
+          id: item.operation_id,
+          type: item.operation_type,
+          date: item.operation_date,
+          description: item.operation_description,
+          targettype: item.operation_targettype,
+          target: item.operation_target,
+          performedById: item.performedById,
+      }));
+    return operations;
+  }
+  async getHistoryByUser(companyCode: string, username: string, limit: number = 0, start: number = 0): Promise<any[] |null> {
+    const companyEntity = await this.companyRepo.findOne({
+      where: { code: companyCode },
+    });
+    if (!companyEntity) {
+      throw new Error('Company not found');
+    }
+    const user = await this.userService.findOneByUsername(username, companyEntity.id);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const raw = await this.repo
+      .createQueryBuilder('operation')
+      .where('operation.companyId = :companyId', { companyId: companyEntity.id })
+      .andWhere('operation.performedById = :id', { id: user.id })
+      .andWhere("deletedAt IS NULL")
+      .select(['operation.id', 'operation.type', 'operation.date', 'operation.description', "operation.targettype", "operation.target"])
+      .addSelect('operation.performedById', 'performedById')
+      .orderBy('operation.id', 'ASC')
+      .take(limit > 0 ? limit : undefined)
+      .skip(start > 0 ? start : undefined)
+      .getRawMany();
+    const operations =
+      raw.map((item) => ({
+          id: item.operation_id,
+          type: item.operation_type,
+          date: item.operation_date,
+          description: item.operation_description,
+          targettype: item.operation_targettype,
+          target: item.operation_target,
+          performedById: item.performedById,
+      }));
+    return operations;
+  }
+
+  async getHistoryById(companyCode: string, targetType:Target, id: number): Promise<any[] | null> {
+    const company = await this.companyRepo.findOne({
+      where: { code: companyCode },
+    });
+    if (!company) {
+      throw new Error('Company not found');
+    }
+
+    const raw = await this.repo
+      .createQueryBuilder('operation')
+      .where('operation.companyId = :companyId', { companyId: company.id })
+      .andWhere('operation.targettype = :targetType', { targetType })
+      .andWhere('operation.target = :id', { id })
+      .where("deletedAt IS NULL")
+      .select(['operation.id', 'operation.type', 'operation.date', 'operation.description', "operation.targettype", "operation.target"])
+      .addSelect('operation.performedById', 'performedById')
+      .orderBy('operation.id', 'ASC')
+      .getRawMany();
+    if (raw.length === 0) {
+      return null;
+    }
+    const operations =
+      raw.map((item) => ({
+          id: item.operation_id,
+          type: item.operation_type,
+          date: item.operation_date,
+          description: item.operation_description,
+          targettype: item.operation_targettype,
+          target: item.operation_target,
+          performedById: item.performedById,
+      }));
+    return operations;
+  }
+
+
 }
