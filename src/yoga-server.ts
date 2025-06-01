@@ -2,6 +2,8 @@
 import { createYoga } from 'graphql-yoga';
 import { createSchema } from 'graphql-yoga';
 import { Query } from './graphql/resolvers/query';
+import { EventQuery } from './graphql/resolvers/event.resolver'; // ✅ NEW
+
 import { INestApplicationContext } from '@nestjs/common';
 import { JwtExtractorService } from 'src/auth/Jwt.extractor.service';
 import { NoteService } from 'src/note/note.service';
@@ -38,7 +40,10 @@ console.log(__dirname)
     path.join(__dirname, "../src/graphql/schema.graphql"),
     "utf-8"
   ),resolvers:{
-     Query,
+     Query: {
+          ...Query,
+          ...EventQuery, 
+        },
      NoteLine,
      Operation
     } }),

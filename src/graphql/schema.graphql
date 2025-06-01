@@ -74,4 +74,6 @@ type Query {
   users: [User!]!
   operation(limit:Int, start:Int): [Operation!]!
   NoteLines(noteId: ID!, limit:Int, start:Int): [NoteLine!]!
+  allEventTitles: [String!]!        
+  eventTitlesByDate(date: Date!): [String!]!   
 }
