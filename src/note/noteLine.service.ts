@@ -44,6 +44,28 @@ export class NoteLineService extends SharedService<NoteLine> {
         updatedAt : updated.updatedAt,
       }
     }
+    async updateWithoutEvent(id=0, data: UpdateNoteLineDto, userID?): Promise<DeepPartial<NoteLine> | null> {
+      const entity = await this.repository.findOne({where : {lineNumber: data.lineNumber, note: {id: data.noteId}}} );
+      const user = await this.repository.manager.getRepository(User).findOne({where: {id: userID}});
+      if(user == null) {
+        throw new InternalServerErrorException(`User with id ${userID} not found`);
+      }
+      if (!entity) {
+        throw new NotFoundException(`Entity with id ${id} not found`);
+      }
+      const{noteId, lineNumber, ...act_data} = data;
+      console.log("act_data", act_data as DeepPartial<NoteLine>);
+      const updated1 =  await this.repository.merge(entity, data);
+      const updated = await this.repository.save(updated1);
+        if (updated == null) {
+            return null;
+        }
+      this.repository.update(entity.id, { lastEditedBy: user});
+      return {
+        ...data,
+        updatedAt : updated.updatedAt,
+      }
+    }
 
     async createMultiple(n:number, noteId: number):Promise<Number>{
       console.log("createMultiple called with n:", n, "and noteId:", noteId);

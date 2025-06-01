@@ -65,6 +65,7 @@ async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<Use
       target: savedUser.id,
       targettype: Target.USER,
       date: new Date(),
+      company: company,
     };
     const newEvent = this.eventRepository.create(op);
     await this.eventRepository.save(newEvent);
@@ -130,6 +131,7 @@ async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<Use
       target: user.id,
       targettype: Target.USER,
       date: new Date(),
+      company: user.company,
     };
     const newEvent = this.eventRepository.create(op);
     await this.eventRepository.save(newEvent);

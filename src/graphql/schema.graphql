@@ -16,6 +16,7 @@ enum Target {
   company
   task
   noteline
+  note
 }
 
 enum TaskStatus {
@@ -74,4 +75,7 @@ type Query {
   users: [User!]!
   operation(limit:Int, start:Int): [Operation!]!
   NoteLines(noteId: ID!, limit:Int, start:Int): [NoteLine!]!
+  operationBytargetType(targetType: Target!, start:Int, limit:Int): [Operation]!
+  operationByUser(username: String!, start:Int, limit:Int): [Operation]!
+  OperationByTarget(targetType: Target!, targetId: Int!, start:Int, limit:Int): [Operation!]
 }

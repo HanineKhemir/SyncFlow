@@ -76,13 +76,7 @@ export class CompanyService {
       Note.lines.push(noteLine);
     }
     Note.lineCount = Note.lines.length;
-    await this.NoteService.update(Note.id, Note, manager.id);
-
-    this.createEventService.createEvent({
-      type: OperationType.CREATE,
-      userId : manager.id,
-      data: manager});
-
+    await this.NoteService.updateWithoutEvent(Note.id, Note, manager.id);
 
     return savedCompany;
   }
