@@ -13,6 +13,7 @@ import { Note } from 'src/note/entities/note.entity';
 import { NoteLine } from 'src/note/entities/noteline.entity';
 import { Schedule } from 'src/schedule/entities/schedule.entity';
 import { Task } from 'src/task/entities/task.entity';
+import { Event } from 'src/events/entities/event.entity';
 @Injectable()
 export class CreateEventService {
   constructor(
@@ -53,7 +54,11 @@ export class CreateEventService {
     targetType = Target.NOTELINE;
     const { note, ...rest } = data;
     restData = rest;
-  } else {
+  } else if (data instanceof Event) {
+    targetType = Target.EVENT;
+    restData = data;
+  }
+  else {
     throw new Error('Could not determine target type');
   }
 

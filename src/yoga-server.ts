@@ -2,6 +2,8 @@
 import { createYoga } from 'graphql-yoga';
 import { createSchema } from 'graphql-yoga';
 import { Query } from './graphql/resolvers/query';
+import { EventQuery } from './graphql/resolvers/event.resolver'; // ✅ NEW
+
 import { INestApplicationContext } from '@nestjs/common';
 import { JwtExtractorService } from 'src/auth/Jwt.extractor.service';
 import { NoteService } from 'src/note/note.service';
@@ -20,6 +22,7 @@ import { Operation, NoteLine } from './graphql/resolvers/fieldresolvers';
 import { TaskQuery, TaskMutation, Task } from './graphql/resolvers/task.resolvers';
 import { UserQuery, UserMutation, UserType } from './graphql/resolvers/user.resolvers';
 import { TaskService } from './task/task.service';
+import { EventsService } from './events/events.service';
 
     
 export function createYogaServer(app: INestApplicationContext) {
@@ -46,6 +49,7 @@ console.log(__dirname)
      Query: {
        ...Query,
        ...TaskQuery,
+        ...EventQuery ,
        ...UserQuery
      },
      Mutation: {
@@ -83,6 +87,7 @@ if (token) {
 
       return {
         user, 
+        eventsService: app.get(EventsService),
         noteService,
         noteLineService,
         userService,
