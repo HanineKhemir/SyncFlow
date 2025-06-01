@@ -42,28 +42,22 @@ import { EventsModule } from './events/events.module'; // ← your new module
           username: dbConfig.databaseUsername,
           password: dbConfig.databasePassword,
           database: dbConfig.databaseName,
-          entities: [User, Note, Task, Schedule, NoteLine, Company, Operation, Message,Chat],
-          synchronize: true, 
-          entities: [User, Note, Task, Schedule, NoteLine, Company, Operation,Event],
+          entities: [User, Note, Task, Schedule, NoteLine, Company, Operation, Message, Chat, Event],
           synchronize: true,
         };
       },
     }),
 
-    EventEmitterModule.forRoot(),
-    NoteModule, AuthModule, UserModule, TaskModule, ScheduleModule, CompanyModule, HistoryModule, ChatModule
-
- 
-
-    // Feature modules
-    NoteModule,
-    AuthModule,
-    UserModule,
-    TaskModule,
-    ScheduleModule,
-    CompanyModule,
-    HistoryModule,
-    EventsModule 
-  ],
+  EventEmitterModule.forRoot(),
+  NoteModule,
+  AuthModule,
+  UserModule,
+  TaskModule,
+  ScheduleModule,
+  CompanyModule,
+  HistoryModule,
+  ChatModule,
+  EventsModule
+],
 })
 export class AppModule {}
