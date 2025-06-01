@@ -1,3 +1,5 @@
+
+
 export const Query = {
     hello: (_parent: any, _args: any, _context) => {
         return 'Hello World!';
@@ -25,5 +27,6 @@ export const Query = {
         }
         const notelines = await context.noteLineService.getNoteLinesByNoteId(_args.noteId, _args.limit, _args.start);
         return notelines;
-    }
+    },
+
 }

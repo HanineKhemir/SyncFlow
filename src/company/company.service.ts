@@ -91,4 +91,7 @@ export class CompanyService {
     return this.companyRepository.findOne({ where: { code } });
   }
   
+  async getCompanyById(id: number): Promise<Company | null> {
+    return this.companyRepository.findOne({ where: { id } });
+  }
 }

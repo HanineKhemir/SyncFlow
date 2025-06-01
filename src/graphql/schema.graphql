@@ -25,6 +25,7 @@ enum TaskStatus {
 }
 
 type User {
+  id: ID!
   username: String!
   password: String!
   company: Company!
@@ -47,6 +48,7 @@ type Company {
   id: ID!
   name: String!
   users: [User!]!
+  code: String!
 }
 
 type NoteLine {
@@ -63,15 +65,41 @@ type Task {
   id: ID!
   title: String!
   description: String
+  dueDate: Date!
+  completed: Boolean!
   assignedTo: User
-  status: TaskStatus!
-  dueDate: Date
+  company: Company!
 }
 
+input CreateTaskInput {
+  title: String!
+  description: String
+  dueDate: Date!
+  assignedToId: ID
+  completed: Boolean
+}
+
+input UpdateTaskInput {
+  title: String
+  description: String
+  dueDate: Date
+  assignedToId: ID
+  completed: Boolean
+}
 
 type Query {
   hello: String
   users: [User!]!
   operation(limit:Int, start:Int): [Operation!]!
   NoteLines(noteId: ID!, limit:Int, start:Int): [NoteLine!]!
+  tasks: [Task!]!
+  task(id: ID!): Task
+  tasksByUser(userId: ID!): [Task!]!
+  tasksByCompany(companyId: ID!): [Task!]!
+}
+
+type Mutation {
+  createTask(input: CreateTaskInput!): Task!
+  updateTask(id: ID!, input: UpdateTaskInput!): Task!
+  deleteTask(id: ID!): Boolean!
 }
