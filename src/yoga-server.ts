@@ -18,7 +18,8 @@ import { ScheduleService } from './schedule/schedule.service';
 import { UserService } from './user/user.service';
 import { ConfigService } from '@nestjs/config';
 import { Operation, NoteLine } from './graphql/resolvers/fieldresolvers';
-
+import { TaskQuery , TaskMutation,Task} from './graphql/resolvers/task.resolvers';
+import { TaskService } from './task/task.service';
 
     
 export function createYogaServer(app: INestApplicationContext) {
@@ -30,6 +31,7 @@ export function createYogaServer(app: INestApplicationContext) {
   const companyService = app.get(CompanyService); 
   const scheduleService = app.get(ScheduleService);
   const configService = app.get(ConfigService);
+  const taskService = app.get(TaskService);
 
   const secret = configService.get('JWT_SECRET');
 
@@ -41,11 +43,16 @@ console.log(__dirname)
     "utf-8"
   ),resolvers:{
      Query: {
-          ...Query,
-          ...EventQuery, 
-        },
+       ...Query,
+       ...TaskQuery,
+        ...EventQuery 
+     },
+     Mutation: {
+       ...TaskMutation
+     },
      NoteLine,
-     Operation
+     Operation,
+     Task
     } }),
 
     context: async ({ request }) => {
@@ -79,6 +86,7 @@ if (token) {
         historyService,
         companyService,
         scheduleService,
+        taskService
       };
     },
   });

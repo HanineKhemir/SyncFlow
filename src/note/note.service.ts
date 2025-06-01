@@ -1,12 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { JwtPayload } from 'src/auth/jwt-payload.interface';
 import { SharedService } from 'src/services/shared.services';
 import { Note } from './entities/note.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateEventService } from 'src/history/create-event.service';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import { NoteLine } from './entities/noteline.entity';
+import { OperationType } from 'src/enum/operation-type';
+import { Schedule } from 'src/schedule/entities/schedule.entity';
+import { Task } from 'src/task/entities/task.entity';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class NoteService extends SharedService<Note>{
@@ -23,6 +27,17 @@ export class NoteService extends SharedService<Note>{
             relations: ['lines'],
         });
         return note ? note.lines.length : 0;
+}
+async updateWithoutEvent(id: number, data: DeepPartial<Note>, userID?): Promise<DeepPartial<Note> | null> {
+  const entity = await this.findOne(id);
+  console.log('Entity found for update:', entity);
+  if (!entity) {
+    throw new NotFoundException(`Entity with id ${id} not found`);
+  }
+  const updated = this.repository.merge(entity, data);
+  console.log('Updated entity:', updated);
+  const savedEntity = await this.repository.save(updated);
+  return savedEntity;
 }
 
 async getNoteById(noteId: number): Promise<Note | null> {

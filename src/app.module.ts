@@ -18,11 +18,14 @@ import { Note } from './note/entities/note.entity';
 import { Operation } from './history/entities/operation.entity';
 import { HistoryModule } from './history/history.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ChatModule } from './chat/chat.module';
+import { Message } from './chat/entities/message.entity';
+import { Chat } from './chat/entities/chat.entity';
 import { Event } from './events/entities/event.entity';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
 import { EventsModule } from './events/events.module'; // ← your new module
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+
 
 @Module({
   imports: [
@@ -39,6 +42,8 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
           username: dbConfig.databaseUsername,
           password: dbConfig.databasePassword,
           database: dbConfig.databaseName,
+          entities: [User, Note, Task, Schedule, NoteLine, Company, Operation, Message,Chat],
+          synchronize: true, 
           entities: [User, Note, Task, Schedule, NoteLine, Company, Operation,Event],
           synchronize: true,
         };
@@ -46,6 +51,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
     }),
 
     EventEmitterModule.forRoot(),
+    NoteModule, AuthModule, UserModule, TaskModule, ScheduleModule, CompanyModule, HistoryModule, ChatModule
 
  
 
