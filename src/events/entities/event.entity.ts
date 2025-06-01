@@ -18,7 +18,6 @@ export class Event {
   @Column()
   date: Date;
 
-  
   @ManyToOne(() => User, user => user.events)
   user: User;
 }

@@ -3,7 +3,7 @@ import { Company } from 'src/company/entities/company.entity';
 import { NoteLine } from 'src/note/entities/noteline.entity';
 import { Task } from 'src/task/entities/task.entity';
 import  {Role} from '../../enum/role.enum';
-//import { Event } from 'src/events/entities/event.entity';
+import { Event } from 'src/events/entities/event.entity';
 
 @Entity()
 export class User {
@@ -34,8 +34,7 @@ export class User {
   @DeleteDateColumn()
   deletedAt?: Date;
 
-
- // @OneToMany(() => Event, event => event.user)
-  //events: Event[];
+  @OneToMany(() => Event, event => event.user)
+  events: Event[];
  
 }
