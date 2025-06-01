@@ -18,6 +18,9 @@ import { Note } from './note/entities/note.entity';
 import { Operation } from './history/entities/operation.entity';
 import { HistoryModule } from './history/history.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ChatModule } from './chat/chat.module';
+import { Message } from './chat/entities/message.entity';
+import { Chat } from './chat/entities/chat.entity';
 
 @Module({
   imports: [
@@ -34,13 +37,13 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
           username: dbConfig.databaseUsername,
           password: dbConfig.databasePassword,
           database: dbConfig.databaseName,
-          entities: [User, Note, Task, Schedule, NoteLine, Company, Operation],
+          entities: [User, Note, Task, Schedule, NoteLine, Company, Operation, Message,Chat],
           synchronize: true, 
         };
       },
     }),
     EventEmitterModule.forRoot(),
-    NoteModule, AuthModule, UserModule, TaskModule, ScheduleModule, CompanyModule, HistoryModule
+    NoteModule, AuthModule, UserModule, TaskModule, ScheduleModule, CompanyModule, HistoryModule, ChatModule
   ],
 })
 export class AppModule {}

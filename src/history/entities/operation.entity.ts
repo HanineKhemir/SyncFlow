@@ -14,7 +14,7 @@ export class Operation {
   @Column()
   date: Date;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'longtext' })
   description: string;
   
   @Column({type:'enum', enum: Target})
