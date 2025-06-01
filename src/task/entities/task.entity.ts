@@ -25,6 +25,9 @@ export class Task {
   @Column({ default: false })
   completed: boolean;
 
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
+
   @DeleteDateColumn()
   deletedAt?: Date;
 }

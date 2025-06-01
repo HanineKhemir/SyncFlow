@@ -3,5 +3,6 @@ export enum Target {
     TASK = 'task',
     USER = 'user',
     NOTE = 'note',
-    NOTELINE = 'noteline'
+    NOTELINE = 'noteline',
+    EVENT = 'event'
 }
