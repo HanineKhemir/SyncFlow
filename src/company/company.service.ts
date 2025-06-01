@@ -86,4 +86,9 @@ export class CompanyService {
 
     return savedCompany;
   }
+  async findByCode(code: string): Promise<Company | null> {
+    console.log(`Searching for company with code: ${code}`);
+    return this.companyRepository.findOne({ where: { code } });
+  }
+  
 }

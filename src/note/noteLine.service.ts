@@ -13,6 +13,7 @@ import { CreateEventService } from 'src/history/create-event.service';
 import { OperationType } from 'src/enum/operation-type';
 import { Schedule } from 'src/schedule/entities/schedule.entity';
 import { Task } from 'src/task/entities/task.entity';
+import { use } from 'passport';
 
 @Injectable()
 export class NoteLineService extends SharedService<NoteLine> {
@@ -24,6 +25,10 @@ export class NoteLineService extends SharedService<NoteLine> {
 
     async update(id=0, data: UpdateNoteLineDto, userID?): Promise<DeepPartial<NoteLine> | null> {
       const entity = await this.repository.findOne({where : {lineNumber: data.lineNumber, note: {id: data.noteId}}} );
+      const user = await this.repository.manager.getRepository(User).findOne({where: {id: userID}});
+      if(user == null) {
+        throw new InternalServerErrorException(`User with id ${userID} not found`);
+      }
       if (!entity) {
         throw new NotFoundException(`Entity with id ${id} not found`);
       }
@@ -33,6 +38,7 @@ export class NoteLineService extends SharedService<NoteLine> {
         if (updated == null) {
             return null;
         }
+      this.repository.update(entity.id, { lastEditedBy: user});
       return {
         ...data,
         updatedAt : updated.updatedAt,
@@ -50,7 +56,7 @@ export class NoteLineService extends SharedService<NoteLine> {
         const noteLines: NoteLine[] = [];
         for (let i = 0; i < n; i++) {
             const noteLine = new NoteLine();
-            noteLine.lineNumber = i + 1;
+            noteLine.lineNumber = note[0].lineCount + i + 1;
             noteLine.note = note[0];
             noteLines.push(noteLine);
         }
@@ -60,6 +66,45 @@ export class NoteLineService extends SharedService<NoteLine> {
         this.notesRepo.update(noteId, { updatedAt: new Date(),  lineCount: savedNoteLines.length+note[0].lineCount });
         return savedNoteLines.length;
         }
+
+
+    async getNoteLinesByNoteId(noteId: number, start:number=0, limit:number = 0): Promise<any[]> {
+        const note = await this.notesRepo.findOne({ where: { id: noteId } });
+        if (!note) {
+            throw new NotFoundException(`Note with id ${noteId} not found`);
+        }
+        const rawNoteLines = await this.repository.createQueryBuilder("noteline")
+  .where("noteline.noteId = :noteId", { noteId })
+  .where("noteline.deletedAt IS NULL")
+  .select([
+    "noteline.id",
+    "noteline.lineNumber",
+    "noteline.content",
+    "noteline.updatedAt",
+    "noteline.highlighted",
+    "noteline.fontSize",
+    "noteline.color"
+  ])
+  .addSelect("noteline.lastEditedById")  
+  .orderBy("noteline.lineNumber", "ASC")
+  .skip(start ? start : 0)
+  .limit(limit ? limit : undefined)
+  .getRawMany();
+  const noteLines = rawNoteLines.map(raw => ({
+  id: raw.noteline_id,
+  lineNumber: raw.noteline_lineNumber,
+  content: raw.noteline_content,
+  updatedAt: raw.noteline_updatedAt,
+  highlighted: Boolean(raw.noteline_highlighted),
+  fontSize: raw.noteline_fontSize,
+  color: raw.noteline_color,
+  lastEditedById: raw.lastEditedById,
+}));
+
+        console.log("noteLines", noteLines);
+      
+        return noteLines;
+    }
     // async create(createNoteDto: CreateNoteDto, user: JwtPayload): Promise<NoteLine |null> {
     //     return this.sharedService.create(createNoteDto, user);
     // }

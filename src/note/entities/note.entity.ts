@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, DeleteDateColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Company } from 'src/company/entities/company.entity';
 import { Task } from '../../task/entities/task.entity';
@@ -22,6 +22,7 @@ export class Note {
 
   @Column({default: 20})
   lineCount: number;
-
+  @DeleteDateColumn()
+  deletedAt?: Date;
   
 }

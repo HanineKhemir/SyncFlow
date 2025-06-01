@@ -126,10 +126,19 @@ export class SharedService<T extends Note | NoteLine | Schedule | Task | User> {
 }
 
 
-  async delete(id: number,userID?): Promise<void> {
+  async delete(id: number, userID?): Promise<void> {
+    const entity = await this.findOne(id);
+    if (!entity) {
+      throw new NotFoundException(`Entity with id ${id} not found`);
+    }
     const result = await this.repository.softDelete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Entity with id ${id} not found`);
     }
+    this.createEventService.createEvent({
+      type: OperationType.DELETE,
+      userId: userID,
+      data: entity,
+    });
   }
 }

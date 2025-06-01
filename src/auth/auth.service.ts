@@ -16,6 +16,7 @@ import { UserService } from 'src/user/user.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateOperationDto } from 'src/history/dto/create-operation.dto';
 import { Target } from 'src/enum/target.enum';
+import { SharedService } from 'src/services/shared.services';
 
 @Injectable()
 export class AuthService {
@@ -95,5 +96,43 @@ async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<Use
     const token = this.jwtService.sign(payload);
 
     return { access_token: token };
+  }
+
+  async deleteUser(userId: number, manager: JwtPayload): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['company'] });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    if (user.company.code !== manager.companyCode) {
+      throw new UnauthorizedException('You do not have permission to delete this user');
+    }
+    if (user.id === manager.sub) {
+      throw new UnauthorizedException('You cannot delete yourself');
+    }
+
+    const managerfr = await this.userRepository.findOne({ where: { id: manager.sub } });
+    if (!managerfr) {
+      throw new UnauthorizedException('Manager user not found');
+    }
+    const userData = {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      company: user.company.code,
+    }
+    await this.userRepository.softDelete(user.id);
+    console.log('User deleted:', user);
+
+    const op: CreateOperationDto = {
+      type: OperationType.DELETE,
+      description: JSON.stringify(userData),
+      performedBy: managerfr,
+      target: user.id,
+      targettype: Target.USER,
+      date: new Date(),
+    };
+    const newEvent = this.eventRepository.create(op);
+    await this.eventRepository.save(newEvent);
+    this.eventEmitter.emit(`event.created.${user.company.code}`, newEvent);
   }
 }

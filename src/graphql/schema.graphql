@@ -1,9 +1,8 @@
 scalar Date
 
 enum Role {
-  ADMIN
-  USER
-  MANAGER
+  user
+  manager
 }
 
 enum OperationType {
@@ -13,10 +12,10 @@ enum OperationType {
 }
 
 enum Target {
-  USER
-  COMPANY
-  TASK
-  NOTELINE
+  user
+  company
+  task
+  noteline
 }
 
 enum TaskStatus {
@@ -40,7 +39,8 @@ type Operation {
   date: Date!
   targettype: Target!
   target: Int!
-  performedBy: User!
+  performedBy: User
+  description: String
 }
 
 type Company {
@@ -50,11 +50,13 @@ type Company {
 }
 
 type NoteLine {
-  id: ID!
-  content: String!
-  author: User!
-  createdAt: Date!
+  id: ID
+  content: String
   updatedAt: Date
+  color: String
+  fontSize: Int
+  highlighted: Boolean
+  lastEditedBy: User
 }
 
 type Task {
@@ -66,8 +68,10 @@ type Task {
   dueDate: Date
 }
 
+
 type Query {
   hello: String
   users: [User!]!
-  history: [Operation!]!
+  operation(limit:Int, start:Int): [Operation!]!
+  NoteLines(noteId: ID!, limit:Int, start:Int): [NoteLine!]!
 }
