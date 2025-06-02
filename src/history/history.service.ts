@@ -86,7 +86,7 @@ export class HistoryService {
       .andWhere("deletedAt IS NULL")
       .select(['operation.id', 'operation.type', 'operation.date', 'operation.description', "operation.targettype", "operation.target"])
       .addSelect('operation.performedById', 'performedById')
-      .orderBy('operation.id', 'ASC')
+      .orderBy('operation.date', 'DESC')
       .take(limit > 0 ? limit : undefined)
       .skip(start > 0 ? start : undefined)
       .getRawMany();
