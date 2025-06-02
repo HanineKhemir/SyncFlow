@@ -18,6 +18,7 @@ enum Target {
   task
   noteline
   note
+  event
 }
 
 enum TaskStatus {
