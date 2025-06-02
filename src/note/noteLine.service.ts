@@ -127,7 +127,7 @@ export class NoteLineService extends SharedService<NoteLine> {
         const rawNoteLines = await this.repository.createQueryBuilder("noteline")
         
   .where("noteline.noteId = :noteId", { noteId })
-  .where("noteline.deletedAt IS NULL")
+  .andWhere("noteline.deletedAt IS NULL")
   .select([
     "noteline.id",
     "noteline.lineNumber",
