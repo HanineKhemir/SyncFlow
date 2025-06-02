@@ -32,12 +32,14 @@
             if (context.user.role !== 'manager') {
                 throw new Error('Access denied: Only managers can view history');
             }
+            console.log(_args.targetType)
             return context.historyService.getHistoryByTargetType(context.user.companyCode, _args.targetType, _args.start, _args.limit);
         },
-        async operationByUser(_parent: any, _args: {username: number, start: number, limit: number}, context) {
+        async operationByUser(_parent: any, _args: {username: String, start: number, limit: number}, context) {
             if (context.user.role !== 'manager') {
                 throw new Error('Access denied: Only managers can view history');
             }
+            console.log(_args)
             return context.historyService.getHistoryByUser(context.user.companyCode, _args.username, _args.start, _args.limit);
         },
         async OperationByTarget(_parent: any, _args: {targetType:Target, targetId: number}, context) {
