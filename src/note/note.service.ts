@@ -11,11 +11,13 @@ import { OperationType } from 'src/enum/operation-type';
 import { Schedule } from 'src/schedule/entities/schedule.entity';
 import { Task } from 'src/task/entities/task.entity';
 import { User } from 'src/user/entities/user.entity';
+import { CompanyService } from 'src/company/company.service';
 
 @Injectable()
 export class NoteService extends SharedService<Note>{
   constructor(
     @InjectRepository(Note) private readonly repo: Repository<Note>,
+    private readonly companyService: CompanyService,
     private readonly cEventService: CreateEventService
   ) {
     super(repo, cEventService);
@@ -48,4 +50,16 @@ async getNoteById(noteId: number): Promise<Note | null> {
     return temp;
   }
 
+  async getnoteId(user: JwtPayload): Promise<Note | null> {
+    const companyCode = user.companyCode;
+    const company = await this.companyService.findByCode(companyCode);
+    const companyId = company?.id;
+    if (!companyId) {
+      return null;
+    }
+    const temp = await this.repo.findOne({
+      where: { company: { id: companyId } },
+    });
+    return temp;
+  }
 }
