@@ -58,7 +58,6 @@ export class HistoryService {
       .take(limit > 0 ? limit : undefined)
       .skip(start > 0 ? start : undefined)
       .getRawMany();
-      console.log(raw);
     const operations = 
       raw.map((item) => ({
           id: item.operation_id,
@@ -79,7 +78,6 @@ export class HistoryService {
     if (!company) {
       throw new Error('Company not found');
     }
-    console.log(targetType)
 
     const raw = await this.repo
       .createQueryBuilder('operation')
@@ -88,7 +86,7 @@ export class HistoryService {
       .andWhere("deletedAt IS NULL")
       .select(['operation.id', 'operation.type', 'operation.date', 'operation.description', "operation.targettype", "operation.target"])
       .addSelect('operation.performedById', 'performedById')
-      .orderBy('operation.id', 'ASC')
+      .orderBy('operation.id', 'DESC')
       .take(limit > 0 ? limit : undefined)
       .skip(start > 0 ? start : undefined)
       .getRawMany();
@@ -124,7 +122,7 @@ export class HistoryService {
       .andWhere("deletedAt IS NULL")
       .select(['operation.id', 'operation.type', 'operation.date', 'operation.description', "operation.targettype", "operation.target"])
       .addSelect('operation.performedById', 'performedById')
-      .orderBy('operation.id', 'ASC')
+      .orderBy('operation.id', 'DESC')
       .take(limit > 0 ? limit : undefined)
       .skip(start > 0 ? start : undefined)
       .getRawMany();

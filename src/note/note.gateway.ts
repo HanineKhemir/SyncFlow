@@ -15,6 +15,9 @@ import { NoteService } from './note.service';
 import { NoteLineService } from './noteLine.service';
 import { UpdateNoteLineDto } from './dto/update-noteLine.dto';
 import { ConnectedUser } from 'src/auth/decorator/user.decorator';
+
+
+
 @WebSocketGateway({ cors: true, namespace: 'whiteboard' })
 export class Notesocket implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -114,11 +117,19 @@ if (lineCount === undefined) {
 }
 
 if (data.lineNumber >= lineCount - 5) {
-  console.log(`Extending note ${data.noteId} with 10 new lines...`);
-  await this.noteLineService.createMultiple(5, data.noteId);
-  console.log(`Extended note ${data.noteId} with 10 new lines.`);
-  this.noteLineCounts.set(data.noteId, lineCount + 5); // Update line count
+  const newLines = await this.noteLineService.createMultiple(5, data.noteId);
+  this.noteLineCounts.set(data.noteId, lineCount + 5);
+  console.log(`Created 5 new lines for note ${data.noteId}:`, newLines);
+
+  // Notify all clients in the company about the new page
+  this.server.to(user.companyCode).emit('newPageCreated', {
+    noteId: data.noteId,
+    newLines,
+  });
+
+  console.log(`Extended note ${data.noteId} with 5 new lines.`);
 }
+
   // Check if the user already has a lock
   for (const [noteId, userMap] of this.noteLocks) {
     if (userMap.has(user.username)) {
@@ -226,6 +237,7 @@ async handleNoteAltered(
     // Optionally emit an error event to the client here
   }
 }
+
 
 
 }

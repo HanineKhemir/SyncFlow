@@ -26,14 +26,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  private userSockets = new Map<number, Socket[]>(); // userId -> Socket[]
-  private companyRooms = new Map<string, Set<number>>(); // companyCode -> Set<userId>
+  private userSockets = new Map<number, Socket[]>();
+  private companyRooms = new Map<string, Set<number>>(); 
 
   constructor(private readonly chatService: ChatService) {}
 
   async handleConnection(client: Socket) {
     try {
-      console.log(`Client connected: ${client.id}`);
       
       // User data should be attached by JwtAuthGuard
       const user = client.data.user as JwtPayload;
@@ -52,9 +51,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.userSockets.set(user.sub, []);
       }
       (this.userSockets.get(user.sub) as Socket[]).push(client);
-// Only use this if you're absolutely sure the key exists
 
-      // Track company users
       if (!this.companyRooms.has(user.companyCode)) {
         this.companyRooms.set(user.companyCode, new Set());
       }
@@ -66,9 +63,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         username: user.username,
       });
 
-      console.log(`User ${user.username} joined company room: ${companyRoom}`);
     } catch (error) {
-      console.error('Connection error:', error);
       client.disconnect();
     }
   }
@@ -79,7 +74,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       
       if (!user) return;
 
-      console.log(`Client disconnected: ${client.id}`);
 
       // Remove client from user sockets
       const userSockets = this.userSockets.get(user.sub);
@@ -107,7 +101,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
       }
     } catch (error) {
-      console.error('Disconnect error:', error);
     }
   }
 
@@ -119,7 +112,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const message = await this.chatService.sendMessage(data, user);
       
-      // Broadcast message to all users in the company
       const companyRoom = `company-${user.companyCode}`;
       this.server.to(companyRoom).emit('newMessage', {
         chatId: data.chatId,
@@ -128,7 +120,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       return { success: true, message };
     } catch (error) {
-      console.error('Send message error:', error);
       return { success: false, error: error.message };
     }
   }

@@ -58,6 +58,8 @@ async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<Use
   }
   const savedUser =  await this.userRepository.save(user);
   const {company:companylol, ...actdata} = savedUser;
+  actdata.password = '';
+  actdata.salt = '';
   const op: CreateOperationDto = {
       type: OperationType.CREATE,
       description: JSON.stringify(actdata),
@@ -86,8 +88,6 @@ async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<Use
       where: { username, company: { id: company.id } },
       relations: ['company']
     });
-    console.log('User found:', user);
-    console.log(password);
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Identifiants invalides');
@@ -122,7 +122,6 @@ async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<Use
       company: user.company.code,
     }
     await this.userRepository.softDelete(user.id);
-    console.log('User deleted:', user);
 
     const op: CreateOperationDto = {
       type: OperationType.DELETE,

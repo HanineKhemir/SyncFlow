@@ -13,7 +13,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const type = context.getType();
 
     if (type === 'http') {
-      // For HTTP, delegate to Passport's JwtAuthGuard (handles everything)
+      
       return super.canActivate(context) as Promise<boolean>;
     }
 

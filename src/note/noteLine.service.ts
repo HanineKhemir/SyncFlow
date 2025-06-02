@@ -67,27 +67,54 @@ export class NoteLineService extends SharedService<NoteLine> {
       }
     }
 
-    async createMultiple(n:number, noteId: number):Promise<Number>{
-      console.log("createMultiple called with n:", n, "and noteId:", noteId);
-        const note = await this.notesRepo.find({ where: { id: noteId } });
-        console.log("note", note);
-        if (note.length !== 1) {
-            throw new NotFoundException(`Note with id ${noteId} not found`);
-        }
-        console.log("in func");
-        const noteLines: NoteLine[] = [];
-        for (let i = 0; i < n; i++) {
-            const noteLine = new NoteLine();
-            noteLine.lineNumber = note[0].lineCount + i + 1;
-            noteLine.note = note[0];
-            noteLines.push(noteLine);
-        }
-        console.log("noteLines", noteLines);
-        const savedNoteLines = await this.repository.save(noteLines);
-        console.log("savedNoteLines", savedNoteLines);
-        this.notesRepo.update(noteId, { updatedAt: new Date(),  lineCount: savedNoteLines.length+note[0].lineCount });
-        return savedNoteLines.length;
-        }
+    async createMultiple(n: number, noteId: number): Promise<{
+  noteId: number;
+  newLineCount: number;
+  newLines: { lineNumber: number; content: string }[];
+}> {
+  console.log("createMultiple called with n:", n, "and noteId:", noteId);
+
+  const notes = await this.notesRepo.find({ where: { id: noteId } });
+  if (notes.length !== 1) {
+    throw new NotFoundException(`Note with id ${noteId} not found`);
+  }
+  const note = notes[0];
+
+  const noteLines: NoteLine[] = [];
+  for (let i = 0; i < n; i++) {
+    const noteLine = new NoteLine();
+    noteLine.lineNumber = note.lineCount + i + 1;
+    noteLine.note = note;
+    noteLine.content = ''; 
+    noteLines.push(noteLine);
+  }
+
+  const savedNoteLines = await this.repository.save(noteLines);
+
+  const newLineCount = savedNoteLines.length + note.lineCount;
+
+  await this.notesRepo.update(noteId, {
+    updatedAt: new Date(),
+    lineCount: newLineCount,
+  });
+
+  const newLines = savedNoteLines.map(line => ({
+    lineNumber: line.lineNumber,
+    content: line.content,
+    id: line.id,
+    fontsize: line.fontSize,
+    color: line.color,
+    highlighted: line.highlighted,
+  }));
+  console.log("New lines created:", newLines);
+
+  return {
+    noteId,
+    newLineCount,
+    newLines,
+  };
+}
+
 
 
     async getNoteLinesByNoteId(noteId: number, start:number=0, limit:number = 0): Promise<any[]> {
@@ -95,9 +122,12 @@ export class NoteLineService extends SharedService<NoteLine> {
         if (!note) {
             throw new NotFoundException(`Note with id ${noteId} not found`);
         }
+          const take = limit > 0 ? limit : 100;
+          console.log("Fetching note lines for noteId:", noteId, "with start:", start, "and limit:", take);
         const rawNoteLines = await this.repository.createQueryBuilder("noteline")
+        
   .where("noteline.noteId = :noteId", { noteId })
-  .where("noteline.deletedAt IS NULL")
+  .andWhere("noteline.deletedAt IS NULL")
   .select([
     "noteline.id",
     "noteline.lineNumber",
@@ -110,7 +140,7 @@ export class NoteLineService extends SharedService<NoteLine> {
   .addSelect("noteline.lastEditedById")  
   .orderBy("noteline.lineNumber", "ASC")
   .skip(start ? start : 0)
-  .limit(limit ? limit : undefined)
+  .limit(take)
   .getRawMany();
   const noteLines = rawNoteLines.map(raw => ({
   id: raw.noteline_id,
