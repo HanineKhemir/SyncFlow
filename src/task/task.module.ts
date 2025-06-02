@@ -10,6 +10,7 @@ import { User } from '../user/entities/user.entity';
 import { Operation } from '../history/entities/operation.entity';
 import { UserService } from '../user/user.service';
 import { HistoryModule } from '../history/history.module';
+import { CreateEventService } from 'src/history/create-event.service';
 
 @Module({
   imports: [
