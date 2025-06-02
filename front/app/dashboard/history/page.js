@@ -134,7 +134,7 @@ export default function History() {
         if (!isManager || !token) return;
         console.log(token)
         const setupSSE = () => {
-            const eventSource =  fetch (`http://localhost:3000/history/events`, {
+            const eventSource =  fetch(`http://localhost:3000/history/events`, {
                  headers: {
           'Authorization': `Bearer ${token}`,
           

@@ -52,14 +52,14 @@ const Sidebar = () => {
           
           
           <li className={styles.navItem}>
-            <Link href="/" className={styles.navLink}>
+            <Link href="/dashboard/chat" className={styles.navLink}>
               <MessageCircle size={20} className={styles.icon} />
               {!collapsed && <span className={styles.text}>Chat</span>}
             </Link>
           </li>
           
           <li className={styles.navItem}>
-            <Link href="/" className={styles.navLink}>
+            <Link href="/dashboard/notes" className={styles.navLink}>
               <NotebookPen size={20} className={styles.icon} />
               {!collapsed && <span className={styles.text}>Notes</span>}
             </Link>
