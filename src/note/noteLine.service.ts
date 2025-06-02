@@ -102,6 +102,9 @@ export class NoteLineService extends SharedService<NoteLine> {
     lineNumber: line.lineNumber,
     content: line.content,
     id: line.id,
+    fontsize: line.fontSize,
+    color: line.color,
+    highlighted: line.highlighted,
   }));
   console.log("New lines created:", newLines);
 

@@ -1,5 +1,5 @@
 // src/app.module.ts
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { TypeOrmModule  } from '@nestjs/typeorm';
 import { ConfigModule } from './config/config.module'; 
 import { ConfigService } from './config/config.service';
@@ -25,6 +25,7 @@ import { Event } from './events/entities/event.entity';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
 import { EventsModule } from './events/events.module'; // ← your new module
+import { SseAuthMiddleware } from './middleware/sse-auth.middleware';
 
 
 @Module({
@@ -61,4 +62,10 @@ import { EventsModule } from './events/events.module'; // ← your new module
   EventsModule
 ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(SseAuthMiddleware) 
+      .forRoutes({ path: 'history/events', method: RequestMethod.GET }); 
+  }
+}

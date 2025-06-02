@@ -33,7 +33,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleConnection(client: Socket) {
     try {
-      console.log(`Client connected: ${client.id}`);
       
       // User data should be attached by JwtAuthGuard
       const user = client.data.user as JwtPayload;
@@ -64,9 +63,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         username: user.username,
       });
 
-      console.log(`User ${user.username} joined company room: ${companyRoom}`);
     } catch (error) {
-      console.error('Connection error:', error);
       client.disconnect();
     }
   }
@@ -77,7 +74,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       
       if (!user) return;
 
-      console.log(`Client disconnected: ${client.id}`);
 
       // Remove client from user sockets
       const userSockets = this.userSockets.get(user.sub);
@@ -105,7 +101,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
       }
     } catch (error) {
-      console.error('Disconnect error:', error);
     }
   }
 
@@ -125,7 +120,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       return { success: true, message };
     } catch (error) {
-      console.error('Send message error:', error);
       return { success: false, error: error.message };
     }
   }

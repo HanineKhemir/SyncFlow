@@ -27,7 +27,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       secretOrKey: secret,
     });
   }
-
   async validate(payload: JwtPayload) {
     return this.Extractor.validatePayload(payload);
   }

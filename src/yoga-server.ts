@@ -39,7 +39,6 @@ export function createYogaServer(app: INestApplicationContext) {
 
   const secret = configService.get('JWT_SECRET');
 
-console.log(__dirname)
   return createYoga({
     schema: createSchema({
   typeDefs: fs.readFileSync(
@@ -71,14 +70,11 @@ let user: any = null;
 if (token) {
   try {
     const decodedJwt = jwt.verify(token, secret as string) as any;
-    console.log('User extracted from token:', decodedJwt);
     user = await jwtExtractor.validatePayload(decodedJwt); 
-    console.log('User after validation:', user);
     if (!user) {
       throw new Error('User not found');
     }
   } catch (e) {
-    console.warn('Invalid token');
   }
 }else{
   console.warn('No token provided');
