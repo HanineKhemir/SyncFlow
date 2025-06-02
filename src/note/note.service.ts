@@ -66,6 +66,7 @@ async getNoteById(noteId: number): Promise<Note | null> {
     const temp = await this.repo.findOne({
       where: { company: { id: companyId } },
     });
+    console.log('Note found for company:', temp);
     return temp;
   }
 }

@@ -62,6 +62,7 @@ type NoteLine {
   fontSize: Int
   highlighted: Boolean
   lastEditedBy: User
+  lineNumber: Int
 }
 
 type Task {
