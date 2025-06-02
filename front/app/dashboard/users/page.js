@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
+import axios from 'axios';
 import styles from './users.module.css';
 import { useAuth } from '../../hooks/useAuth';
 import {
@@ -17,6 +18,13 @@ export default function UsersPage() {
   const [selectedRole, setSelectedRole] = useState('');
   const [showDeleted, setShowDeleted] = useState(false);
   const [companyId, setCompanyId] = useState(null);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    username: '',
+    password: '',
+    role: 'USER'
+  });
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
 
   // Debug logs
   console.log('🔍 Debug Info:');
@@ -135,6 +143,59 @@ export default function UsersPage() {
     }
   };
 
+  // Handle Add User
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    setIsCreatingUser(true);
+
+    try {
+      const response = await axios.post(
+        'http://localhost:3000/auth/create-user',
+        {
+          username: newUserData.username,
+          password: newUserData.password,
+          role: newUserData.role,
+          companyId: companyId // Include company ID if needed
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('✅ User created successfully:', response.data);
+      alert('User created successfully!');
+      
+      // Reset form and close modal
+      setNewUserData({
+        username: '',
+        password: '',
+        role: 'USER'
+      });
+      setShowAddUserModal(false);
+      
+      // Refresh the users list
+      handleRefresh();
+      
+    } catch (error) {
+      console.error('❌ Error creating user:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to create user';
+      alert('Error creating user: ' + errorMessage);
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewUserData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   // Transform and filter users - FIX THE DATA PATH
   const transformedUsers = data?.usersByCompany ? data.usersByCompany.map(user => ({
     id: user.id,
@@ -195,15 +256,20 @@ export default function UsersPage() {
 
   return (
     <div className={styles.usersContainer}>
-
       <header className={styles.header}>
         <div>
           <h1>USERS MANAGEMENT</h1>
           <p>Manage your application users</p>
         </div>
         <div className={styles.headerActions}>
-
-
+          {isManager && (
+            <button 
+              className={styles.addButton}
+              onClick={() => setShowAddUserModal(true)}
+            >
+              + ADD USER
+            </button>
+          )}
         </div>
       </header>
 
@@ -236,6 +302,83 @@ export default function UsersPage() {
       {user && (
         <div className={styles.userInfo}>
           Welcome, {user.username} ({user.role})
+        </div>
+      )}
+
+      {/* Add User Modal */}
+      {showAddUserModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <h2>Add New User</h2>
+              <button 
+                className={styles.closeButton}
+                onClick={() => setShowAddUserModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddUser} className={styles.modalForm}>
+              <div className={styles.formGroup}>
+                <label htmlFor="username">Username</label>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={newUserData.username}
+                  onChange={handleInputChange}
+                  required
+                  className={styles.formInput}
+                />
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label htmlFor="password">Password</label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={newUserData.password}
+                  onChange={handleInputChange}
+                  required
+                  className={styles.formInput}
+                />
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label htmlFor="role">Role</label>
+                <select
+                  id="role"
+                  name="role"
+                  value={newUserData.role}
+                  onChange={handleInputChange}
+                  className={styles.formInput}
+                >
+                  <option value="USER">USER</option>
+                  <option value="MANAGER">MANAGER</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+              </div>
+              
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.cancelButton}
+                  onClick={() => setShowAddUserModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={styles.createButton}
+                  disabled={isCreatingUser}
+                >
+                  {isCreatingUser ? 'Creating...' : 'Create User'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

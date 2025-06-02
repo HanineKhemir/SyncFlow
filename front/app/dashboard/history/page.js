@@ -20,13 +20,12 @@ const GET_OPERATIONS = gql`
       performedBy {
         id
       }
-      
     }
   }
 `;
 
 const GET_OPERATIONS_BY_TARGET_TYPE = gql`
-  query GetOperationsByTargetType($targetType: String!, $start: Int!, $limit: Int!) {
+  query GetOperationsByTargetType($targetType: Target!, $start: Int!, $limit: Int!) {
     operationBytargetType(targetType: $targetType, start: $start, limit: $limit) {
       id
       type
@@ -37,13 +36,12 @@ const GET_OPERATIONS_BY_TARGET_TYPE = gql`
       performedBy {
         id
       }
-      
     }
   }
 `;
 
 const GET_OPERATIONS_BY_USER = gql`
-  query GetOperationsByUser($username: Int!, $start: Int!, $limit: Int!) {
+  query GetOperationsByUser($username: String!, $start: Int!, $limit: Int!) {
     operationByUser(username: $username, start: $start, limit: $limit) {
       id
       type
@@ -54,10 +52,10 @@ const GET_OPERATIONS_BY_USER = gql`
       performedBy {
         id
       }
-      
     }
   }
 `;
+
 export default function History() {
     const { token, user, isManager } = useAuth('');
     const [companyId, setCompanyId] = useState(null);
@@ -89,13 +87,13 @@ export default function History() {
         },
     });
 
-    // Operations query
+    // Main operations query - always fetch for 'all' filter
     const { data: operationsData, loading: operationsLoading, error: operationsError, refetch: refetchOperations } = useQuery(GET_OPERATIONS, {
         variables: {
             start: (currentPage - 1) * pageSize,
             limit: pageSize
         },
-        skip: !isManager || !token,
+        skip: !isManager || !token || (filterType !== 'all'),
         context: {
             headers: {
                 authorization: token ? `Bearer ${token}` : "",
@@ -103,39 +101,58 @@ export default function History() {
         },
     });
 
-    // Filtered operations query
-    const { data: filteredOperationsData, loading: filteredLoading } = useQuery(
-        selectedTargetType ? GET_OPERATIONS_BY_TARGET_TYPE :
-            selectedUser ? GET_OPERATIONS_BY_USER : GET_OPERATIONS,
-        {
-            variables: selectedTargetType ? {
-                targetType: selectedTargetType,
-                start: (currentPage - 1) * pageSize,
-                limit: pageSize
-            } : selectedUser ? {
-                username: parseInt(selectedUser),
-                start: (currentPage - 1) * pageSize,
-                limit: pageSize
-            } : {
-                start: (currentPage - 1) * pageSize,
-                limit: pageSize
+    // Target type filtered operations query
+    const { data: targetTypeData, loading: targetTypeLoading, error: targetTypeError, refetch: refetchTargetType } = useQuery(GET_OPERATIONS_BY_TARGET_TYPE, {
+        variables: {
+            targetType: selectedTargetType,
+            start: (currentPage - 1) * pageSize,
+            limit: pageSize
+        },
+        skip: !isManager || !token || filterType !== 'targetType' || !selectedTargetType,
+        context: {
+            headers: {
+                authorization: token ? `Bearer ${token}` : "",
             },
-            skip: !isManager || !token || filterType === 'all',
-            context: {
-                headers: {
-                    authorization: token ? `Bearer ${token}` : "",
-                },
+        },
+    });
+
+    // User filtered operations query
+    const { data: userFilterData, loading: userFilterLoading, error: userFilterError, refetch: refetchUserFilter } = useQuery(GET_OPERATIONS_BY_USER, {
+        variables: {
+            username: selectedUser,
+            start: (currentPage - 1) * pageSize,
+            limit: pageSize
+        },
+        skip: !isManager || !token || filterType !== 'user' || !selectedUser,
+        context: {
+            headers: {
+                authorization: token ? `Bearer ${token}` : "",
             },
-        }
-    );
+        },
+    });
+
+    // Debug logging
+    useEffect(() => {
+        console.log('🔍 Debug Info:');
+        console.log('- isManager:', isManager);
+        console.log('- token:', !!token);
+        console.log('- filterType:', filterType);
+        console.log('- selectedTargetType:', selectedTargetType);
+        console.log('- selectedUser:', selectedUser);
+        console.log('- targetTypeData:', targetTypeData);
+        console.log('- targetTypeError:', targetTypeError);
+        console.log('- userFilterData:', userFilterData);
+        console.log('- userFilterError:', userFilterError);
+    }, [isManager, token, filterType, selectedTargetType, selectedUser, targetTypeData, targetTypeError, userFilterData, userFilterError]);
 
     // Setup Server-Sent Events for real-time updates
     useEffect(() => {
         if (!isManager || !token) return;
-        console.log(token)
+        
         const setupSSE = () => {
-            const eventSource =  new EventSource(`http://localhost:3000/history/events?authorization=${token}`, {
-                withCredentials: true,  });
+            const eventSource = new EventSource(`http://localhost:3000/history/events?authorization=${token}`, {
+                withCredentials: true,
+            });
 
             eventSource.onmessage = (event) => {
                 try {
@@ -143,8 +160,14 @@ export default function History() {
                     const newOperation = JSON.parse(event.data);
                     setRealTimeEvents(prev => [newOperation, ...prev.slice(0, 9)]); // Keep last 10 events
 
-                    // Refresh operations data
-                    refetchOperations();
+                    // Refresh the appropriate query based on current filter
+                    if (filterType === 'all') {
+                        refetchOperations();
+                    } else if (filterType === 'targetType') {
+                        refetchTargetType();
+                    } else if (filterType === 'user') {
+                        refetchUserFilter();
+                    }
                 } catch (error) {
                     console.error('Error parsing SSE data:', error);
                 }
@@ -168,35 +191,70 @@ export default function History() {
                 eventSourceRef.current.close();
             }
         };
-    }, [isManager, token, refetchOperations]);
+    }, [isManager, token, filterType, refetchOperations, refetchTargetType, refetchUserFilter]);
 
     // Handle filter changes
     const handleFilterChange = (type) => {
+        console.log('🔄 Filter changed to:', type);
         setFilterType(type);
         setCurrentPage(1);
-        setSelectedUser('');
-        setSelectedTargetType('');
+        if (type !== 'user') setSelectedUser('');
+        if (type !== 'targetType') setSelectedTargetType('');
     };
 
-    const handleUserFilter = (userId) => {
-        setSelectedUser(userId);
-        setFilterType('user');
-        setCurrentPage(1);
+    const handleUserFilter = () => {
+        console.log('👤 Applying user filter:', selectedUser);
+        if (selectedUser) {
+            setFilterType('user');
+            setCurrentPage(1);
+        }
     };
 
-    const handleTargetTypeFilter = (targetType) => {
-        setSelectedTargetType(targetType);
-        setFilterType('targetType');
-        setCurrentPage(1);
+    const handleTargetTypeFilter = () => {
+        console.log('🎯 Applying target type filter:', selectedTargetType);
+        if (selectedTargetType) {
+            setFilterType('targetType');
+            setCurrentPage(1);
+        }
     };
 
     const getCurrentOperations = () => {
-        if (filterType !== 'all' && filteredOperationsData) {
-            return selectedTargetType ? filteredOperationsData.operationBytargetType :
-                selectedUser ? filteredOperationsData.operationByUser :
-                    [];
+        switch (filterType) {
+            case 'targetType':
+                console.log('📊 Getting target type operations:', targetTypeData?.operationBytargetType);
+                return targetTypeData?.operationBytargetType || [];
+            case 'user':
+                console.log('📊 Getting user operations:', userFilterData?.operationByUser);
+                return userFilterData?.operationByUser || [];
+            case 'all':
+            default:
+                console.log('📊 Getting all operations:', operationsData?.operation);
+                return operationsData?.operation || [];
         }
-        return operationsData?.operation || [];
+    };
+
+    const getCurrentLoading = () => {
+        switch (filterType) {
+            case 'targetType':
+                return targetTypeLoading;
+            case 'user':
+                return userFilterLoading;
+            case 'all':
+            default:
+                return operationsLoading;
+        }
+    };
+
+    const getCurrentError = () => {
+        switch (filterType) {
+            case 'targetType':
+                return targetTypeError;
+            case 'user':
+                return userFilterError;
+            case 'all':
+            default:
+                return operationsError;
+        }
     };
 
     const formatTimestamp = (timestamp) => {
@@ -250,6 +308,17 @@ export default function History() {
 
             {activeTab === 'operations' && (
                 <div className={styles.operationsSection}>
+                    {/* Debug Info Display */}
+                    <div style={{padding: '10px', background: '#f0f0f0', margin: '10px 0', fontSize: '12px'}}>
+                        <strong>Debug Info:</strong><br/>
+                        Filter Type: {filterType}<br/>
+                        Selected Target Type: {selectedTargetType}<br/>
+                        Selected User: {selectedUser}<br/>
+                        Current Operations Count: {getCurrentOperations().length}<br/>
+                        Loading: {getCurrentLoading() ? 'Yes' : 'No'}<br/>
+                        Error: {getCurrentError() ? getCurrentError().message : 'None'}
+                    </div>
+
                     {/* Filters */}
                     <div className={styles.filters}>
                         <div className={styles.filterGroup}>
@@ -269,14 +338,18 @@ export default function History() {
                             <div className={styles.filterGroup}>
                                 <label>User ID:</label>
                                 <input
-                                    type="number"
                                     value={selectedUser}
                                     onChange={(e) => setSelectedUser(e.target.value)}
                                     className={styles.input}
                                     placeholder="Enter user ID"
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleUserFilter();
+                                        }
+                                    }}
                                 />
                                 <button
-                                    onClick={() => handleUserFilter(selectedUser)}
+                                    onClick={handleUserFilter}
                                     className={styles.filterButton}
                                     disabled={!selectedUser}
                                 >
@@ -290,16 +363,20 @@ export default function History() {
                                 <label>Target Type:</label>
                                 <select
                                     value={selectedTargetType}
-                                    onChange={(e) => setSelectedTargetType(e.target.value)}
+                                    onChange={(e) => {
+                                        console.log('🎯 Target type selected:', e.target.value);
+                                        setSelectedTargetType(e.target.value);
+                                    }}
                                     className={styles.select}
                                 >
                                     <option value="">Select target type</option>
-                                    <option value="NOTE">Note</option>
-                                    <option value="TASK">Task</option>
-                                    <option value="USER">User</option>
+                                    <option value="note">Note</option>
+                                    <option value="task">Task</option>
+                                    <option value="user">User</option>
+                                    <option value="event">Event</option>
                                 </select>
                                 <button
-                                    onClick={() => handleTargetTypeFilter(selectedTargetType)}
+                                    onClick={handleTargetTypeFilter}
                                     className={styles.filterButton}
                                     disabled={!selectedTargetType}
                                 >
@@ -310,10 +387,10 @@ export default function History() {
                     </div>
 
                     {/* Operations Table */}
-                    {operationsLoading || filteredLoading ? (
+                    {getCurrentLoading() ? (
                         <div className={styles.loading}>Loading operations...</div>
-                    ) : operationsError ? (
-                        <div className={styles.error}>Error loading operations: {operationsError.message}</div>
+                    ) : getCurrentError() ? (
+                        <div className={styles.error}>Error loading operations: {getCurrentError().message}</div>
                     ) : (
                         <div className={styles.tableContainer}>
                             <table className={styles.table}>

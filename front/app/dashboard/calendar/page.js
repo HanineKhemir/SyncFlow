@@ -80,6 +80,7 @@ export default function CalendarEvents() {
       const eventsData = await response.json();
       
       // Safely transform the data even if empty
+      console.log(eventsData)
       const formattedEvents = Array.isArray(eventsData) 
         ? eventsData.map(event => ({
             id: event.id,
@@ -87,7 +88,7 @@ export default function CalendarEvents() {
             start: event.date ? new Date(event.date) : new Date(),
             end: event.date ? new Date(new Date(event.date).getTime() + (event.duration || 60 * 60 * 1000)) : new Date(Date.now() + 60 * 60 * 1000),
             description: event.description || '',
-            assignedUser: event.assignedUser || 'Not assigned'
+            assignedUser: event.user.username || 'Not assigned'
           }))
         : [];
       

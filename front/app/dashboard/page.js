@@ -116,102 +116,64 @@ export default function Dashboard() {
   };
 
   // SSE Setup with Authentication 
-  useEffect(() => {
+ useEffect(() => {
     if (!token) return;
-
-    let isActive = true;
-    let eventSource = null;
-
-    const connectToSSE = async () => {
-      try {
-        
-        const response = await fetch('http://localhost:3000/history/events', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            
-            
-          },
+    
+    const setupSSE = () => {
+        const eventSource = new EventSource(`http://localhost:3000/history/events?authorization=${token}`, {
+            withCredentials: true,
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        eventSource.onmessage = (event) => {
+            try {
+                const eventData = JSON.parse(event.data);
+                
+                if (eventData.targettype === 'task') {
+                    console.log('Received task event:', eventData);
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
+                    const newActivity = {
+                        id: eventData.id,
+                        time: new Date(eventData.date).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        }),
+                        text: formatActivityMessage(eventData),
+                        type: eventData.type,
+                        taskId: eventData.target,
+                        userName: eventData.performedBy?.username
+                    };
 
-        while (isActive) {
-          const { value, done } = await reader.read();
-          if (done) break;
+                    setRecentActivities(prev => {
+                        const updated = [newActivity, ...prev].slice(0, 5);
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+                        return updated;
+                    });
 
-          const chunk = decoder.decode(value);
-          const events = chunk.split('\n\n').filter(event => event.trim());
-
-          events.forEach(event => {
-            const lines = event.split('\n');
-            let eventData = null;
-
-            lines.forEach(line => {
-              if (line.startsWith('data: ')) {
-                try {
-                  eventData = JSON.parse(line.substring(6));
-                } catch (e) {
-                  console.error('Failed to parse SSE data:', e);
+                    refetch();
+                    fetchRecentActivities();
+                    setLastRefresh(Date.now());
                 }
-              }
-            });
-
-            if ( eventData.targettype === 'task') {
-            
-              console.log('Received task event:', eventData);
-
-              
-              const newActivity = {
-                id: eventData.id,
-                time: new Date(eventData.date).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: true
-                }),
-                text: formatActivityMessage(eventData),
-                type: eventData.type,
-                taskId: eventData.target,
-                userName: eventData.performedBy?.username
-              };
-
-              
-              setRecentActivities(prev => {
-               
-                const updated = [newActivity, ...prev].slice(0, 5);
-                // Store in local storage
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-                return updated;
-              });
-
-             
-              refetch();
-              fetchRecentActivities();
-              setLastRefresh(Date.now());
+            } catch (error) {
+                console.error('Error parsing SSE data:', error);
             }
-          });
-        }
-      } catch (error) {
-        console.error('SSE connection error:', error);
-        if (isActive) {
-          setTimeout(connectToSSE, 5000);
-        }
-      }
+        };
+
+        eventSource.onerror = (error) => {
+            console.error('SSE connection error:', error);
+            eventSource.close();
+
+            // Retry connection after 5 seconds
+            setTimeout(setupSSE, 5000);
+        };
+
+        eventSource.current = eventSource;
     };
 
-    connectToSSE();
+    setupSSE();
 
-    return () => {
-      isActive = false;
-      if (eventSource) {
-        eventSource.close();
-      }
-    };
-  }, [token, refetch]);
+    
+}, [token, refetch, fetchRecentActivities]);
 
   useEffect(() => {
   const storedActivities = localStorage.getItem(STORAGE_KEY);
