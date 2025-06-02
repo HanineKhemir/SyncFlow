@@ -4,34 +4,34 @@
     flex-direction: row;
     align-items: center;
     height: 100vh;
-
     padding: 0 20px;
+    position: relative; /* Added for modal positioning */
   }
-   .title {
+  
+  .title {
     font-size: 2rem;
-    color: #212f3cB; 
+    color: #212f3c; 
     font-family: Georgia, 'Times New Roman', Times, serif;
     margin-bottom: 20px;
     text-align: center; 
-    }
+  }
 
   .logo-container{
     flex : 1;
     width: auto;
     height: auto;
     margin:0px;
-    
   }
-.login-form {
+
+  .login-form {
     flex: 1;
     padding:80px;
     padding-left: 20px;
-
   }
 
   .login-form h2 {
     text-align: center;
-    color:  #212f3cB; 
+    color:  #212f3c; 
     margin-bottom: 20px;
     font-family: Georgia, 'Times New Roman', Times, serif;
   }
@@ -51,7 +51,7 @@
     width: 100%;
     padding: 10px;
     font-size: 1rem;
-    border: 1px solid  #212f3cB;
+    border: 1px solid  #212f3c;
     border-radius: 4px;
   }
 
@@ -79,8 +79,8 @@
 
   .login-button:hover {
     background-color:#212f3d ;
-    color:  #212f3cB;
-    border: 2px solid  #212f3cB;
+    color:  #212f3c;
+    border: 2px solid  #212f3c;
   }
 
   .no-account {
@@ -89,11 +89,59 @@
   }
 
   .no-account a {
-    color:  #212f3cB; 
+    color:  #212f3c; 
     text-decoration: none;
     font-weight: bold;
   }
 
   .no-account a:hover {
     text-decoration: underline;
+  }
+
+  /* Custom Modal Styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  .modal {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .modal h2 {
+    color: #212f3c;
+    margin-bottom: 15px;
+    text-align: center;
+  }
+
+  .modal p {
+    margin-bottom: 10px;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  .modal strong {
+    color: #212f3c;
+    font-size: 1.2em;
+    display: inline-block;
+    padding: 5px 10px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+  }
+
+  .modal .login-button {
+    margin-top: 20px;
   }

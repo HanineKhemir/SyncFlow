@@ -142,3 +142,29 @@
       gap: 0.3rem;
     }
   }
+  .loading, .error {
+  padding: 20px;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.error {
+  color: #e74c3c;
+}
+
+.activityItem {
+  display: flex;
+  gap: 15px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.activityTime {
+  font-weight: bold;
+  color: #212f3c;
+  min-width: 70px;
+}
+
+.activityText {
+  flex: 1;
+}
