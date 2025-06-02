@@ -11,6 +11,7 @@ import { Company } from '../company/entities/company.entity';
 import { User } from '../user/entities/user.entity';
 import { SharedService } from '../services/shared.services';
 import { CreateEventService } from '../history/create-event.service';
+import { TaskSelectOptions } from './dto/task-select.dto';
 
 @Injectable()
 export class TaskService {
@@ -72,19 +73,7 @@ export class TaskService {
 
   async findAll(): Promise<Task[]> {
     return this.taskRepository.find({
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        dueDate: true,
-        completed: true,
-        company: {
-          id: true
-        },
-        assignedTo: {
-          id: true
-        }
-      },
+      select: TaskSelectOptions,
       relations: ['company', 'assignedTo'],
     });
   }
@@ -92,19 +81,7 @@ export class TaskService {
   async findOne(id: number): Promise<Task> {
     const task = await this.taskRepository.findOne({
       where: { id },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        dueDate: true,
-        completed: true,
-        company: {
-          id: true
-        },
-        assignedTo: {
-          id: true
-        }
-      },
+      select: TaskSelectOptions,
       relations: ['company', 'assignedTo'],
     });
     
@@ -117,7 +94,25 @@ export class TaskService {
 
   async update(id: number, updateTaskDto: UpdateTaskDto, user: JwtPayload): Promise<Task> {
     const task = await this.findOne(id);
-    const updatedTask = await this.sharedService.update(id, updateTaskDto, user.sub);
+    
+    // Handle user assignment
+    let assignedTo: User | undefined = undefined;
+    if (updateTaskDto.assignedToId) {
+      const foundUser = await this.userRepository.findOne({
+        where: { id: updateTaskDto.assignedToId }
+      });
+      if (!foundUser) {
+        throw new NotFoundException('Assigned user not found');
+      }
+      assignedTo = foundUser;
+    }
+
+    const updateData = {
+      ...updateTaskDto,
+      assignedTo
+    };
+
+    const updatedTask = await this.sharedService.update(id, updateData, user.sub);
     if (!updatedTask || !updatedTask.id) {
       throw new NotFoundException('Failed to update task');
     }
@@ -135,7 +130,7 @@ export class TaskService {
       this.eventEmitter.emit('task.completed', completeTask);
     }
 
-    if (updateTaskDto.dueDate && isTomorrow(updateTaskDto.dueDate)) {
+    if (updateTaskDto.dueDate && isTomorrow(completeTask.dueDate)) {
       this.eventEmitter.emit('task.dueTomorrow', completeTask);
     }
 
@@ -149,19 +144,7 @@ export class TaskService {
   async getTasksByUser(userId: number): Promise<Task[]> {
     return this.taskRepository.find({
       where: { assignedTo: { id: userId } },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        dueDate: true,
-        completed: true,
-        company: {
-          id: true
-        },
-        assignedTo: {
-          id: true
-        }
-      },
+      select: TaskSelectOptions,
       relations: ['company', 'assignedTo'],
     });
   }
@@ -169,19 +152,7 @@ export class TaskService {
   async getTasksByCompany(companyId: number): Promise<Task[]> {
     return this.taskRepository.find({
       where: { company: { id: companyId } },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        dueDate: true,
-        completed: true,
-        company: {
-          id: true
-        },
-        assignedTo: {
-          id: true
-        }
-      },
+      select: TaskSelectOptions,
       relations: ['company', 'assignedTo'],
     });
   }
