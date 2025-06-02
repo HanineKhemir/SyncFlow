@@ -2,6 +2,7 @@ import {
   Controller,
   UseGuards,
   Sse,
+  Param,
 } from '@nestjs/common';
 import { fromEvent, map, Observable } from 'rxjs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -41,10 +42,10 @@ export class HistoryController {
     );
   }
 
-  @Sse("targeted-events")
+  @Sse("targeted-events/:targetType")
   targetedEvents(
     @ConnectedUser() user: JwtPayload,
-    targetType : Target
+    @Param('targetType') targetType: Target
   ): Observable<any> {
     const companyCode = user.companyCode;
 
@@ -55,7 +56,8 @@ export class HistoryController {
       `event.created.${companyCode}`,
     ).pipe(
       map((event: Operation) => {
-        if (event.targettype === targetType) {
+        console.log(`Received event: ${event.targettype}, expected: ${targetType}, ${event.targettype == targetType}`);
+        if (event.targettype == targetType) {
           return { data: event };
         }
         return null; 

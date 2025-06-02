@@ -58,6 +58,8 @@ async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<Use
   }
   const savedUser =  await this.userRepository.save(user);
   const {company:companylol, ...actdata} = savedUser;
+  actdata.password = '';
+  actdata.salt = '';
   const op: CreateOperationDto = {
       type: OperationType.CREATE,
       description: JSON.stringify(actdata),

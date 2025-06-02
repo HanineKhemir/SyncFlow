@@ -66,6 +66,8 @@ export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(SseAuthMiddleware) 
-      .forRoutes({ path: 'history/events', method: RequestMethod.GET }); 
+      .forRoutes({ path: 'history/events', method: RequestMethod.GET },
+        {path: "history/targeted-events", "method": RequestMethod.GET}
+      ); 
   }
 }
