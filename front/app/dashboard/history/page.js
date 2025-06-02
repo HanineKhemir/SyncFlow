@@ -134,15 +134,12 @@ export default function History() {
         if (!isManager || !token) return;
         console.log(token)
         const setupSSE = () => {
-            const eventSource =  fetch(`http://localhost:3000/history/events`, {
-                 headers: {
-          'Authorization': `Bearer ${token}`,
-          
-        },
-            });
+            const eventSource =  new EventSource(`http://localhost:3000/history/events?authorization=${token}`, {
+                withCredentials: true,  });
 
             eventSource.onmessage = (event) => {
                 try {
+                    console.log('Received SSE data:', event.data);
                     const newOperation = JSON.parse(event.data);
                     setRealTimeEvents(prev => [newOperation, ...prev.slice(0, 9)]); // Keep last 10 events
 
@@ -193,7 +190,6 @@ export default function History() {
         setCurrentPage(1);
     };
 
-    // Get current operations data based on filter
     const getCurrentOperations = () => {
         if (filterType !== 'all' && filteredOperationsData) {
             return selectedTargetType ? filteredOperationsData.operationBytargetType :
