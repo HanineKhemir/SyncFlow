@@ -1,4 +1,4 @@
-// pages/tasks.js or app/tasks/page.js
+
 'use client'
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
@@ -6,7 +6,7 @@ import { gql } from '@apollo/client';
 import { useAuth } from '@/app/hooks/useAuth';
 import styles from './tasks.module.css';
 
-// GraphQL queries and mutations
+
 const GET_TASKS_BY_USER = gql`
   query GetTasksByUser($userId: ID!) {
     tasksByUser(userId: $userId) {
@@ -47,10 +47,10 @@ const UPDATE_TASK = gql`
 const TasksPage = () => {
   const { user, token } = useAuth();
   
-  // Apollo Client queries and mutations
+  
   const { data, loading, error, refetch } = useQuery(GET_TASKS_BY_USER, {
     variables: { userId: user?.id?.toString() },
-    skip: !user?.id, // Skip query if user is not available
+    skip: !user?.id, 
     context: {
       headers: {
         authorization: token ? `Bearer ${token}` : "",
@@ -75,7 +75,7 @@ const toggleTaskCompletion = async (taskId, currentCompleted) => {
     await updateTask({
       variables: {
         id: taskId,
-        input: {  // Now properly wrapped in an "input" object
+        input: {  
           title: task.title,
           description: task.description,
           dueDate: task.dueDate,
@@ -116,7 +116,7 @@ const toggleTaskCompletion = async (taskId, currentCompleted) => {
     });
   } catch (err) {
     console.error('Error updating task:', err);
-    // Optional: Show error to user
+    
   }
 };
 

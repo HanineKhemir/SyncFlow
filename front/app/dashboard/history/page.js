@@ -1,19 +1,417 @@
-'use client'
+'use client';
 import React, { useState, useEffect, useRef } from 'react';
+import { useQuery } from '@apollo/client';
 import { useAuth } from '@/app/hooks/useAuth';
 import { GET_TASKS_BY_COMPANY } from '@/app/graphql/tache';
-export default function History(){ 
-  const {token,user,isManager}=useAuth('')
-  const { data, loading, error, refetch } = useQuery(GET_TASKS_BY_COMPANY, {
-      variables: { userId: user?.id?.toString() },
-      skip: !user?.id, // Skip query if user is not available
-      context: {
-        headers: {
-          authorization: token ? `Bearer ${token}` : "",
+import styles from './page.module.css';
+
+// GraphQL queries for history operations
+import { gql } from '@apollo/client';
+
+const GET_OPERATIONS = gql`
+  query GetOperations($start: Int, $limit: Int) {
+    operation(start: $start, limit: $limit) {
+      id
+      type
+      date
+      description
+      targettype
+      target
+      performedBy {
+        id
+      }
+      
+    }
+  }
+`;
+
+const GET_OPERATIONS_BY_TARGET_TYPE = gql`
+  query GetOperationsByTargetType($targetType: String!, $start: Int!, $limit: Int!) {
+    operationBytargetType(targetType: $targetType, start: $start, limit: $limit) {
+      id
+      type
+      date
+      description
+      targettype
+      target
+      performedBy {
+        id
+      }
+      
+    }
+  }
+`;
+
+const GET_OPERATIONS_BY_USER = gql`
+  query GetOperationsByUser($username: Int!, $start: Int!, $limit: Int!) {
+    operationByUser(username: $username, start: $start, limit: $limit) {
+      id
+      type
+      date
+      description
+      targettype
+      target
+      performedBy {
+        id
+      }
+      
+    }
+  }
+`;
+export default function History() {
+    const { token, user, isManager } = useAuth('');
+    const [companyId, setCompanyId] = useState(null);
+    const [activeTab, setActiveTab] = useState('operations');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize] = useState(10);
+    const [filterType, setFilterType] = useState('all');
+    const [selectedUser, setSelectedUser] = useState('');
+    const [selectedTargetType, setSelectedTargetType] = useState('');
+    const [realTimeEvents, setRealTimeEvents] = useState([]);
+    const eventSourceRef = useRef(null);
+
+    // Set company ID when user is available
+    useEffect(() => {
+        if (user?.company?.id) {
+            console.log('✅ Setting company ID:', user.company.id);
+            setCompanyId(user.company.id);
+        }
+    }, [user]);
+
+    // Tasks query
+    const { data: tasksData, loading: tasksLoading, error: tasksError, refetch: refetchTasks } = useQuery(GET_TASKS_BY_COMPANY, {
+        variables: { userId: user?.id?.toString() },
+        skip: !user?.id,
+        context: {
+            headers: {
+                authorization: token ? `Bearer ${token}` : "",
+            },
         },
-      },
     });
 
+    // Operations query
+    const { data: operationsData, loading: operationsLoading, error: operationsError, refetch: refetchOperations } = useQuery(GET_OPERATIONS, {
+        variables: {
+            start: (currentPage - 1) * pageSize,
+            limit: pageSize
+        },
+        skip: !isManager || !token,
+        context: {
+            headers: {
+                authorization: token ? `Bearer ${token}` : "",
+            },
+        },
+    });
 
-  
+    // Filtered operations query
+    const { data: filteredOperationsData, loading: filteredLoading } = useQuery(
+        selectedTargetType ? GET_OPERATIONS_BY_TARGET_TYPE :
+            selectedUser ? GET_OPERATIONS_BY_USER : GET_OPERATIONS,
+        {
+            variables: selectedTargetType ? {
+                targetType: selectedTargetType,
+                start: (currentPage - 1) * pageSize,
+                limit: pageSize
+            } : selectedUser ? {
+                username: parseInt(selectedUser),
+                start: (currentPage - 1) * pageSize,
+                limit: pageSize
+            } : {
+                start: (currentPage - 1) * pageSize,
+                limit: pageSize
+            },
+            skip: !isManager || !token || filterType === 'all',
+            context: {
+                headers: {
+                    authorization: token ? `Bearer ${token}` : "",
+                },
+            },
+        }
+    );
+
+    // Setup Server-Sent Events for real-time updates
+    useEffect(() => {
+        if (!isManager || !token) return;
+        console.log(token)
+        const setupSSE = () => {
+            const eventSource =  fetch (`http://localhost:3000/history/events`, {
+                 headers: {
+          'Authorization': `Bearer ${token}`,
+          
+        },
+            });
+
+            eventSource.onmessage = (event) => {
+                try {
+                    const newOperation = JSON.parse(event.data);
+                    setRealTimeEvents(prev => [newOperation, ...prev.slice(0, 9)]); // Keep last 10 events
+
+                    // Refresh operations data
+                    refetchOperations();
+                } catch (error) {
+                    console.error('Error parsing SSE data:', error);
+                }
+            };
+
+            eventSource.onerror = (error) => {
+                console.error('SSE connection error:', error);
+                eventSource.close();
+
+                // Retry connection after 5 seconds
+                setTimeout(setupSSE, 5000);
+            };
+
+            eventSourceRef.current = eventSource;
+        };
+
+        setupSSE();
+
+        return () => {
+            if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+            }
+        };
+    }, [isManager, token, refetchOperations]);
+
+    // Handle filter changes
+    const handleFilterChange = (type) => {
+        setFilterType(type);
+        setCurrentPage(1);
+        setSelectedUser('');
+        setSelectedTargetType('');
+    };
+
+    const handleUserFilter = (userId) => {
+        setSelectedUser(userId);
+        setFilterType('user');
+        setCurrentPage(1);
+    };
+
+    const handleTargetTypeFilter = (targetType) => {
+        setSelectedTargetType(targetType);
+        setFilterType('targetType');
+        setCurrentPage(1);
+    };
+
+    // Get current operations data based on filter
+    const getCurrentOperations = () => {
+        if (filterType !== 'all' && filteredOperationsData) {
+            return selectedTargetType ? filteredOperationsData.operationBytargetType :
+                selectedUser ? filteredOperationsData.operationByUser :
+                    [];
+        }
+        return operationsData?.operation || [];
+    };
+
+    const formatTimestamp = (timestamp) => {
+        return new Date(timestamp).toLocaleString();
+    };
+
+    if (!isManager) {
+        return (
+            <div className={styles.container}>
+                <div className={styles.accessDenied}>
+                    <h2>Access Denied</h2>
+                    <p>Only managers can view the history page.</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className={styles.container}>
+            <div className={styles.header}>
+                <h1>Company History & Tasks</h1>
+                <div className={styles.tabs}>
+                    <button
+                        className={`${styles.tab} ${activeTab === 'operations' ? styles.active : ''}`}
+                        onClick={() => setActiveTab('operations')}
+                    >
+                        Operations History
+                    </button>
+                    <button
+                        className={`${styles.tab} ${activeTab === 'tasks' ? styles.active : ''}`}
+                        onClick={() => setActiveTab('tasks')}
+                    >
+                        Tasks
+                    </button>
+                </div>
+            </div>
+
+            {/* Real-time Events Indicator */}
+            {realTimeEvents.length > 0 && (
+                <div className={styles.realTimeEvents}>
+                    <h3>Recent Activity</h3>
+                    {realTimeEvents.slice(0, 3).map((event, index) => (
+                        <div key={index} className={styles.realtimeEvent}>
+                            <span className={styles.timestamp}>{formatTimestamp(event.date)}</span>
+                            <span className={styles.action}>{event.type}</span>
+                            <span className={styles.target}>{event.targettype}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {activeTab === 'operations' && (
+                <div className={styles.operationsSection}>
+                    {/* Filters */}
+                    <div className={styles.filters}>
+                        <div className={styles.filterGroup}>
+                            <label>Filter by:</label>
+                            <select
+                                value={filterType}
+                                onChange={(e) => handleFilterChange(e.target.value)}
+                                className={styles.select}
+                            >
+                                <option value="all">All Operations</option>
+                                <option value="user">By User</option>
+                                <option value="targetType">By Target Type</option>
+                            </select>
+                        </div>
+
+                        {filterType === 'user' && (
+                            <div className={styles.filterGroup}>
+                                <label>User ID:</label>
+                                <input
+                                    type="number"
+                                    value={selectedUser}
+                                    onChange={(e) => setSelectedUser(e.target.value)}
+                                    className={styles.input}
+                                    placeholder="Enter user ID"
+                                />
+                                <button
+                                    onClick={() => handleUserFilter(selectedUser)}
+                                    className={styles.filterButton}
+                                    disabled={!selectedUser}
+                                >
+                                    Apply Filter
+                                </button>
+                            </div>
+                        )}
+
+                        {filterType === 'targetType' && (
+                            <div className={styles.filterGroup}>
+                                <label>Target Type:</label>
+                                <select
+                                    value={selectedTargetType}
+                                    onChange={(e) => setSelectedTargetType(e.target.value)}
+                                    className={styles.select}
+                                >
+                                    <option value="">Select target type</option>
+                                    <option value="NOTE">Note</option>
+                                    <option value="TASK">Task</option>
+                                    <option value="USER">User</option>
+                                </select>
+                                <button
+                                    onClick={() => handleTargetTypeFilter(selectedTargetType)}
+                                    className={styles.filterButton}
+                                    disabled={!selectedTargetType}
+                                >
+                                    Apply Filter
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Operations Table */}
+                    {operationsLoading || filteredLoading ? (
+                        <div className={styles.loading}>Loading operations...</div>
+                    ) : operationsError ? (
+                        <div className={styles.error}>Error loading operations: {operationsError.message}</div>
+                    ) : (
+                        <div className={styles.tableContainer}>
+                            <table className={styles.table}>
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Action</th>
+                                        <th>Target Type</th>
+                                        <th>Target ID</th>
+                                        <th>User ID</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {getCurrentOperations().map((operation) => (
+                                        <tr key={operation.id} className={styles.tableRow}>
+                                            <td>{formatTimestamp(operation.date)}</td>
+                                            <td>
+                                                <span className={`${styles.actionBadge} ${styles[operation.type?.toLowerCase()]}`}>
+                                                    {operation.type}
+                                                </span>
+                                            </td>
+                                            <td>{operation.targettype}</td>
+                                            <td>{operation.target}</td>
+                                            <td>{operation.performedBy?.id}</td>
+                                            <td>{operation.description || 'N/A'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+
+                            {getCurrentOperations().length === 0 && (
+                                <div className={styles.noData}>No operations found</div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Pagination */}
+                    <div className={styles.pagination}>
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                            className={styles.paginationButton}
+                        >
+                            Previous
+                        </button>
+                        <span className={styles.pageInfo}>Page {currentPage}</span>
+                        <button
+                            onClick={() => setCurrentPage(prev => prev + 1)}
+                            disabled={getCurrentOperations().length < pageSize}
+                            className={styles.paginationButton}
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'tasks' && (
+                <div className={styles.tasksSection}>
+                    {tasksLoading ? (
+                        <div className={styles.loading}>Loading tasks...</div>
+                    ) : tasksError ? (
+                        <div className={styles.error}>Error loading tasks: {tasksError.message}</div>
+                    ) : (
+                        <div className={styles.tasksGrid}>
+                            {tasksData?.getTasksByCompany?.map((task) => (
+                                <div key={task.id} className={styles.taskCard}>
+                                    <h3>{task.title}</h3>
+                                    <p>{task.description}</p>
+                                    <div className={styles.taskMeta}>
+                                        <span className={`${styles.status} ${styles[task.status?.toLowerCase()]}`}>
+                                            {task.status}
+                                        </span>
+                                        <span className={styles.assignee}>
+                                            Assigned to: {task.assignedTo?.name || 'Unassigned'}
+                                        </span>
+                                    </div>
+                                    <div className={styles.taskDates}>
+                                        <small>Created: {formatTimestamp(task.createdAt)}</small>
+                                        {task.dueDate && (
+                                            <small>Due: {formatTimestamp(task.dueDate)}</small>
+                                        )}
+                                    </div>
+                                </div>
+                            )) || []}
+
+                            {(!tasksData?.getTasksByCompany || tasksData.getTasksByCompany.length === 0) && (
+                                <div className={styles.noData}>No tasks found</div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
 }

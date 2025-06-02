@@ -128,8 +128,8 @@ export default function Dashboard() {
         const response = await fetch('http://localhost:3000/history/events', {
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Accept': 'text/event-stream',
-            'Cache-Control': 'no-cache',
+            
+            
           },
         });
 

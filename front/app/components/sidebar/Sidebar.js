@@ -40,12 +40,7 @@ const Sidebar = () => {
             </li>
           
           
-          <li className={styles.navItem}>
-            <Link href="/dashboard/teams" className={styles.navLink}>
-              <UsersRound size={20} className={styles.icon} />
-              {!collapsed && <span className={styles.text}>Teams</span>}
-            </Link>
-          </li>
+        
           
           <li className={styles.navItem}>
             <Link href="/dashboard/calendar" className={styles.navLink}>
@@ -73,7 +68,7 @@ const Sidebar = () => {
           {/* Show History only to admin */}
           {user?.role === 'manager' && (
             <li className={styles.navItem}>
-              <Link href="/" className={styles.navLink}>
+              <Link href="/dashboard/history" className={styles.navLink}>
                 <History size={20} className={styles.icon} />
                 {!collapsed && <span className={styles.text}>History</span>}
               </Link>
@@ -83,7 +78,7 @@ const Sidebar = () => {
           {/* Show Taches only to non-managers */}
           {user?.role !== 'manager' && (
             <li className={styles.navItem}>
-              <Link href="/" className={styles.navLink}>
+              <Link href="/dashboard/taches" className={styles.navLink}>
                 <ListTodo size={20} className={styles.icon} />
                 {!collapsed && <span className={styles.text}>Taches</span>}
               </Link>
