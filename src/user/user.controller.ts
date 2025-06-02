@@ -1,10 +1,11 @@
-import { Controller, UseGuards, Sse } from '@nestjs/common';
+import { Controller, UseGuards, Sse, Get } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectedUser } from '../auth/decorator/user.decorator';
 import { JwtPayload } from '../auth/jwt-payload.interface';
 import { Observable, of } from 'rxjs';
 import { UserEvents } from './user.events';
+import { User } from './entities/user.entity';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -13,7 +14,10 @@ export class UserController {
     private readonly userService: UserService,
     private readonly userEvents: UserEvents
   ) {}
-
+ @Get('company')
+  async getUsersByCompany(@ConnectedUser() user: JwtPayload): Promise<User[]> {
+    return this.userService.findAll();
+  }
   @Sse('events')
   events(@ConnectedUser() user: JwtPayload): Observable<any> {
     if (!user.sub) {
