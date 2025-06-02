@@ -12,12 +12,13 @@ import { Schedule } from 'src/schedule/entities/schedule.entity';
 import { Task } from 'src/task/entities/task.entity';
 import { User } from 'src/user/entities/user.entity';
 import { CompanyService } from 'src/company/company.service';
+import { Company } from 'src/company/entities/company.entity';
 
 @Injectable()
 export class NoteService extends SharedService<Note>{
   constructor(
     @InjectRepository(Note) private readonly repo: Repository<Note>,
-    private readonly companyService: CompanyService,
+    @InjectRepository(Company) private readonly companyRepo: Repository<Company>,
     private readonly cEventService: CreateEventService
   ) {
     super(repo, cEventService);
@@ -52,7 +53,12 @@ async getNoteById(noteId: number): Promise<Note | null> {
 
   async getnoteId(user: JwtPayload): Promise<Note | null> {
     const companyCode = user.companyCode;
-    const company = await this.companyService.findByCode(companyCode);
+    if (!companyCode) {
+      throw new InternalServerErrorException('Company code is required');
+    }
+    const company = await this.companyRepo.findOne({
+      where: { code: companyCode },
+  });
     const companyId = company?.id;
     if (!companyId) {
       return null;
