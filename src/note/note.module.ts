@@ -10,6 +10,7 @@ import { Notesocket } from './note.gateway';
 import { Note } from './entities/note.entity';
 import { AuthModule } from 'src/auth/auth.module';
 import { HistoryModule } from 'src/history/history.module';
+import { CompanyModule } from 'src/company/company.module';
 
 @Module({
   controllers: [NoteController],

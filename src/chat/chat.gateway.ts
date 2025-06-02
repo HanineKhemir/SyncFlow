@@ -26,8 +26,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  private userSockets = new Map<number, Socket[]>(); // userId -> Socket[]
-  private companyRooms = new Map<string, Set<number>>(); // companyCode -> Set<userId>
+  private userSockets = new Map<number, Socket[]>();
+  private companyRooms = new Map<string, Set<number>>(); 
 
   constructor(private readonly chatService: ChatService) {}
 
@@ -52,9 +52,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.userSockets.set(user.sub, []);
       }
       (this.userSockets.get(user.sub) as Socket[]).push(client);
-// Only use this if you're absolutely sure the key exists
 
-      // Track company users
       if (!this.companyRooms.has(user.companyCode)) {
         this.companyRooms.set(user.companyCode, new Set());
       }
@@ -119,7 +117,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const message = await this.chatService.sendMessage(data, user);
       
-      // Broadcast message to all users in the company
       const companyRoom = `company-${user.companyCode}`;
       this.server.to(companyRoom).emit('newMessage', {
         chatId: data.chatId,
