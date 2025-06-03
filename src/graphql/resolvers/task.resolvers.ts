@@ -38,12 +38,14 @@ export const TaskQuery = {
     return context.taskService.getTasksByUser(parseInt(args.userId));
   },
 
-  async tasksByCompany(_parent: any, args: { companyId: string }, context: any) {
+  async tasksByCompany(_parent: any, args: { companyId: number }, context: any) {
+    const companyID = context.companyService.findByCode(context.user.companyCode);
+    console.log('Fetching tasks for company:', args.companyId);
     if (!context.user) {
       throw new Error('Authentication required');
     }
 
-    return context.taskService.getTasksByCompany(parseInt(args.companyId));
+    return context.taskService.getTasksByCompany(companyID.id);
   }
 };
 

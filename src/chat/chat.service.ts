@@ -105,6 +105,8 @@ export class ChatService {
 
   async sendMessage(sendMessageDto: SendMessageDto, user: JwtPayload): Promise<MessageResponseDto> {
     // Verify user has access to this chat
+    console.log('User:', user);
+    console.log('SendMessageDto:', sendMessageDto);
     const chat = await this.chatRepository.findOne({
       where: { id: sendMessageDto.chatId, company: { code: user.companyCode } },
     });
