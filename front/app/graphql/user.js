@@ -72,10 +72,7 @@ export const RECOVER_USER_MUTATION = gql`
       id
       username
       role
-      company {
-        id
-        name
-      }
+      
     }
   }
 `;

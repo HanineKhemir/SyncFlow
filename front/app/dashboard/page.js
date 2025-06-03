@@ -317,9 +317,10 @@ export default function Dashboard() {
     };
 
     const action = actionMap[event.type] || event.type;
-    const taskTitle = event.targetTitle || 'a task'; 
+    const taskTitle = event.targetTitle || 'a task';
+    const username = event.performedBy?.username || 'Someone';
 
-    return `${event.performedBy?.username || 'Someone'} ${action} ${taskTitle}`;
+    return `${username} ${action} ${taskTitle}`;
   };
 
   const [activitiesLoading, setActivitiesLoading] = useState(false);
@@ -349,13 +350,13 @@ export default function Dashboard() {
         .filter(event => event.targettype === 'task')
         .slice(0, 5)
         .map((event, index) => ({
-          id: event.id || `activity-${index}-${event.date}`, // Ensure unique ID
+          id: event.id || `activity-${index}-${event.date}`,
           time: new Date(event.date).toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit',
             hour12: true
           }),
-          text: formatActivityMessage(event), 
+          text: formatActivityMessage(event),
           type: event.type,
           taskId: event.target,
           userName: event.performedBy?.username,
@@ -407,7 +408,7 @@ export default function Dashboard() {
                     console.log('Received task event:', eventData);
 
                     const newActivity = {
-                        id: eventData.id || `sse-${Date.now()}-${Math.random()}`, // Ensure unique ID
+                        id: eventData.id || `sse-${Date.now()}-${Math.random()}`,
                         time: new Date(eventData.date).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
@@ -654,12 +655,6 @@ export default function Dashboard() {
                   <span className={styles.activityTime}>{activity.time}</span>
                   <span className={styles.activityText}>
                     {activity.text}
-                    {activity.taskTitle && (
-                      <span className={styles.taskTitle}> - {activity.taskTitle}</span>
-                    )}
-                    {activity.userName && (
-                      <span className={styles.userName}> by {activity.userName}</span>
-                    )}
                   </span>
                 </div>
               ))

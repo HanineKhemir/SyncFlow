@@ -9,28 +9,39 @@ import {
   GET_USERS,
   DELETE_USER_MUTATION,
   RECOVER_USER_MUTATION,
-  GET_USERS_BY_COMPANY
+  GET_USERS_BY_COMPANY,
+  GET_DELETED_USERS,
+  UPDATE_USER_MUTATION
 } from '@/app/graphql/user';
 
 export default function UsersPage() {
-  const { user, token, isManager } = useAuth(); // Add isManager here
+  const { user, token, isManager } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
   const [showDeleted, setShowDeleted] = useState(false);
   const [companyId, setCompanyId] = useState(null);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   const [newUserData, setNewUserData] = useState({
     username: '',
     password: '',
     role: 'USER'
   });
+  const [editUserData, setEditUserData] = useState({
+    username: '',
+    password: '',
+    role: 'USER'
+  });
   const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [isUpdatingUser, setIsUpdatingUser] = useState(false);
 
   // Debug logs
   console.log('🔍 Debug Info:');
   console.log('User:', user);
   console.log('Token:', token ? 'Token exists' : 'No token');
   console.log('Company ID:', companyId);
+  console.log('Show Deleted:', showDeleted);
 
   useEffect(() => {
     console.log('🔄 useEffect triggered, user:', user);
@@ -43,9 +54,9 @@ export default function UsersPage() {
     }
   }, [user]);
 
-  // Query to get users
-  const { data, loading, error, refetch } = useQuery(GET_USERS_BY_COMPANY, {
-    skip: !token || !companyId, // Skip query if not authenticated or no companyId
+  // Query for active users by company
+  const { data: activeUsersData, loading: activeLoading, error: activeError, refetch: refetchActive } = useQuery(GET_USERS_BY_COMPANY, {
+    skip: !token || !companyId || showDeleted,
     variables: {
       companyId: companyId
     },
@@ -56,32 +67,54 @@ export default function UsersPage() {
     },
     errorPolicy: 'all',
     onCompleted: (data) => {
-      console.log('✅ Query completed successfully:', data);
+      console.log('✅ Active users query completed:', data);
     },
     onError: (error) => {
-      console.log('❌ Query error:', error);
+      console.log('❌ Active users query error:', error);
     }
   });
 
-  console.log('📊 Query Status:');
-  console.log('Loading:', loading);
-  console.log('Error:', error);
-  console.log('Data:', data);
-  console.log('Skip query?', !token || !companyId);
+  // Query for deleted users
+  const { data: deletedUsersData, loading: deletedLoading, error: deletedError, refetch: refetchDeleted } = useQuery(GET_DELETED_USERS, {
+    skip: !token || !showDeleted,
+    context: {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : ''
+      }
+    },
+    errorPolicy: 'all',
+    onCompleted: (data) => {
+      console.log('✅ Deleted users query completed:', data);
+    },
+    onError: (error) => {
+      console.log('❌ Deleted users query error:', error);
+    }
+  });
 
-  // Mutations
+  // Determine which data to use
+  const currentData = showDeleted ? deletedUsersData : activeUsersData;
+  const currentLoading = showDeleted ? deletedLoading : activeLoading;
+  const currentError = showDeleted ? deletedError : activeError;
+
+  console.log('📊 Current Query Status:');
+  console.log('Loading:', currentLoading);
+  console.log('Error:', currentError);
+  console.log('Data:', currentData);
+
+  // Mutations with proper cache updates
   const [deleteUser] = useMutation(DELETE_USER_MUTATION, {
     context: {
       headers: {
         Authorization: token ? `Bearer ${token}` : ''
       }
     },
-    refetchQueries: [{
-      query: GET_USERS_BY_COMPANY,
-      variables: {
-        companyId: companyId
+    update: (cache, { data: mutationData }) => {
+      if (mutationData?.deleteUser) {
+        // Force refetch both queries
+        refetchActive();
+        refetchDeleted();
       }
-    }],
+    },
     onCompleted: () => {
       alert('User deleted successfully');
     },
@@ -96,17 +129,40 @@ export default function UsersPage() {
         Authorization: token ? `Bearer ${token}` : ''
       }
     },
-    refetchQueries: [{
-      query: GET_USERS_BY_COMPANY,
-      variables: {
-        companyId: companyId
+    update: (cache, { data: mutationData }) => {
+      if (mutationData?.recoverUser) {
+        // Force refetch both queries
+        refetchActive();
+        refetchDeleted();
       }
-    }],
+    },
     onCompleted: () => {
       alert('User recovered successfully');
     },
     onError: (error) => {
       alert('Failed to recover user: ' + error.message);
+    }
+  });
+
+  const [updateUser] = useMutation(UPDATE_USER_MUTATION, {
+    context: {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : ''
+      }
+    },
+    update: (cache, { data: mutationData }) => {
+      if (mutationData?.updateUser) {
+        // Force refetch active users query
+        refetchActive();
+      }
+    },
+    onCompleted: () => {
+      alert('User updated successfully');
+      setShowEditUserModal(false);
+      setEditingUser(null);
+    },
+    onError: (error) => {
+      alert('Failed to update user: ' + error.message);
     }
   });
 
@@ -117,6 +173,7 @@ export default function UsersPage() {
       await deleteUser({
         variables: { id: userId.toString() }
       });
+      
     } catch (err) {
       console.error('Delete error:', err);
     }
@@ -132,10 +189,53 @@ export default function UsersPage() {
     }
   };
 
+  const handleEditUser = (userItem) => {
+    setEditingUser(userItem);
+    setEditUserData({
+      username: userItem.name,
+      password: '', // Don't pre-fill password for security
+      role: userItem.role
+    });
+    setShowEditUserModal(true);
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    setIsUpdatingUser(true);
+
+    try {
+      const updateInput = {
+        username: editUserData.username,
+        role: editUserData.role
+      };
+
+      // Only include password if it's provided
+      if (editUserData.password.trim()) {
+        updateInput.password = editUserData.password;
+      }
+
+      await updateUser({
+        variables: {
+          id: editingUser.id.toString(),
+          input: updateInput
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error updating user:', error);
+      const errorMessage = error.message || 'Failed to update user';
+      alert('Error updating user: ' + errorMessage);
+    } finally {
+      setIsUpdatingUser(false);
+    }
+  };
+
   const handleRefresh = () => {
     console.log('🔄 Manual refresh triggered');
-    if (companyId) {
-      refetch({
+    if (showDeleted) {
+      refetchDeleted();
+    } else if (companyId) {
+      refetchActive({
         companyId: companyId
       });
     } else {
@@ -155,7 +255,7 @@ export default function UsersPage() {
           username: newUserData.username,
           password: newUserData.password,
           role: newUserData.role,
-          companyId: companyId // Include company ID if needed
+          companyId: companyId
         },
         {
           headers: {
@@ -177,7 +277,7 @@ export default function UsersPage() {
       setShowAddUserModal(false);
       
       // Refresh the users list
-      handleRefresh();
+      refetchActive();
       
     } catch (error) {
       console.error('❌ Error creating user:', error);
@@ -196,16 +296,41 @@ export default function UsersPage() {
     }));
   };
 
-  // Transform and filter users - FIX THE DATA PATH
-  const transformedUsers = data?.usersByCompany ? data.usersByCompany.map(user => ({
-    id: user.id,
-    name: user.username,
-    email: `${user.username}@company.com`, // Generate email or add to backend
-    role: user.role,
-    status: user.deletedAt ? 'Inactive' : 'Active',
-    company: user.company?.name || 'No Company',
-    deletedAt: user.deletedAt
-  })) : [];
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditUserData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Transform users based on current view
+  const transformedUsers = (() => {
+    if (showDeleted && deletedUsersData?.deletedUsers) {
+      return deletedUsersData.deletedUsers.map(user => ({
+        id: user.id,
+        name: user.username,
+        email: `${user.username}@company.com`,
+        role: user.role.toUpperCase(), // Ensure consistent case
+        status: 'Inactive',
+        company: user.company?.name || 'No Company',
+        deletedAt: user.deletedAt
+      }));
+    } else if (!showDeleted && activeUsersData?.usersByCompany) {
+      return activeUsersData.usersByCompany
+        .filter(user => !user.deletedAt) // Extra safety filter
+        .map(user => ({
+          id: user.id,
+          name: user.username,
+          email: `${user.username}@company.com`,
+          role: user.role.toUpperCase(), // Ensure consistent case
+          status: 'Active',
+          company: user.company?.name || 'No Company',
+          deletedAt: user.deletedAt
+        }));
+    }
+    return [];
+  })();
 
   console.log('🔄 Transformed users:', transformedUsers);
 
@@ -213,28 +338,29 @@ export default function UsersPage() {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = selectedRole === '' || user.role === selectedRole;
-    const matchesStatus = showDeleted ? user.status === 'Inactive' : user.status === 'Active';
-    return matchesSearch && matchesRole && matchesStatus;
+    return matchesSearch && matchesRole;
   });
 
   const roles = [...new Set(transformedUsers.map(user => user.role))];
 
   // Show loading spinner
-  if (loading) {
+  if (currentLoading) {
     return (
       <div className={styles.usersContainer}>
-        <div className={styles.loading}>Loading users...</div>
+        <div className={styles.loading}>
+          Loading {showDeleted ? 'deleted' : 'active'} users...
+        </div>
       </div>
     );
   }
 
   // Show error message
-  if (error && !data) {
-    console.log('💥 Rendering error state:', error.message);
+  if (currentError && !currentData) {
+    console.log('💥 Rendering error state:', currentError.message);
     return (
       <div className={styles.usersContainer}>
         <div className={styles.error}>
-          Error: {error.message}
+          Error: {currentError.message}
           <button onClick={handleRefresh} className={styles.retryButton}>
             Retry
           </button>
@@ -262,7 +388,7 @@ export default function UsersPage() {
           <p>Manage your application users</p>
         </div>
         <div className={styles.headerActions}>
-          {isManager && (
+          {isManager && !showDeleted && (
             <button 
               className={styles.addButton}
               onClick={() => setShowAddUserModal(true)}
@@ -296,12 +422,25 @@ export default function UsersPage() {
             ))}
           </select>
         </div>
+
+        <div className={styles.toggleContainer}>
+          <label className={styles.toggleLabel}>
+            <input
+              type="checkbox"
+              checked={showDeleted}
+              onChange={(e) => setShowDeleted(e.target.checked)}
+              className={styles.toggleInput}
+            />
+            <span className={styles.toggleSlider}></span>
+            Show Deleted Users
+          </label>
+        </div>
       </div>
 
       {/* Show current user info */}
       {user && (
         <div className={styles.userInfo}>
-          Welcome, {user.username} ({user.role})
+          Welcome, {user.username} ({user.role}) - Viewing: {showDeleted ? 'Deleted Users' : 'Active Users'}
         </div>
       )}
 
@@ -382,6 +521,89 @@ export default function UsersPage() {
         </div>
       )}
 
+      {/* Edit User Modal */}
+      {showEditUserModal && editingUser && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <h2>Edit User</h2>
+              <button 
+                className={styles.closeButton}
+                onClick={() => {
+                  setShowEditUserModal(false);
+                  setEditingUser(null);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateUser} className={styles.modalForm}>
+              <div className={styles.formGroup}>
+                <label htmlFor="edit-username">Username</label>
+                <input
+                  type="text"
+                  id="edit-username"
+                  name="username"
+                  value={editUserData.username}
+                  onChange={handleEditInputChange}
+                  required
+                  className={styles.formInput}
+                />
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label htmlFor="edit-password">Password (leave blank to keep current)</label>
+                <input
+                  type="password"
+                  id="edit-password"
+                  name="password"
+                  value={editUserData.password}
+                  onChange={handleEditInputChange}
+                  placeholder="Enter new password or leave blank"
+                  className={styles.formInput}
+                />
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label htmlFor="edit-role">Role</label>
+                <select
+                  id="edit-role"
+                  name="role"
+                  value={editUserData.role}
+                  onChange={handleEditInputChange}
+                  className={styles.formInput}
+                >
+                  <option value="USER">USER</option>
+                  <option value="MANAGER">MANAGER</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+              </div>
+              
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.cancelButton}
+                  onClick={() => {
+                    setShowEditUserModal(false);
+                    setEditingUser(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={styles.updateButton}
+                  disabled={isUpdatingUser}
+                >
+                  {isUpdatingUser ? 'Updating...' : 'Update User'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {filteredUsers.length > 0 ? (
         <div className={styles.userCardsGrid}>
           {filteredUsers.map(userItem => (
@@ -409,21 +631,37 @@ export default function UsersPage() {
                     <span className={styles.infoLabel}>COMPANY</span>
                     <span className={styles.infoValue}>{userItem.company}</span>
                   </div>
+                  {showDeleted && userItem.deletedAt && (
+                    <div className={styles.infoItem}>
+                      <span className={styles.infoLabel}>DELETED AT</span>
+                      <span className={styles.infoValue}>
+                        {new Date(userItem.deletedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className={styles.cardFooter}>
                 {isManager && (
                   <>
-                    <button className={styles.editButton}>EDIT</button>
                     {userItem.status === 'Active' ? (
-                      <button
-                        className={styles.deleteButton}
-                        onClick={() => handleDeleteUser(userItem.id)}
-                        disabled={userItem.id === user?.id}
-                      >
-                        DELETE
-                      </button>
+                      <>
+                        <button 
+                          className={styles.editButton}
+                          onClick={() => handleEditUser(userItem)}
+                          disabled={userItem.id === user?.id}
+                        >
+                          EDIT
+                        </button>
+                        <button
+                          className={styles.deleteButton}
+                          onClick={() => handleDeleteUser(userItem.id)}
+                          disabled={userItem.id === user?.id}
+                        >
+                          DELETE
+                        </button>
+                      </>
                     ) : (
                       <button
                         className={styles.recoverButton}
@@ -442,7 +680,10 @@ export default function UsersPage() {
         <div className={styles.noResults}>
           No {showDeleted ? 'deleted' : 'active'} users found
           <br />
-          <small>Debug: Query skipped = {!token || !companyId ? 'Yes' : 'No'}</small>
+          <small>
+            Debug: Showing {showDeleted ? 'deleted' : 'active'} users | 
+            Query: {showDeleted ? 'GET_DELETED_USERS' : 'GET_USERS_BY_COMPANY'}
+          </small>
         </div>
       )}
     </div>
