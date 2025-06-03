@@ -19,14 +19,14 @@ import { Target } from 'src/enum/target.enum';
 
 @Controller('history')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles([Role.MANAGER])
 export class HistoryController {
   constructor(
     private readonly historyService: HistoryService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
-
+  
   @Sse('events')
+  @Roles([Role.MANAGER])
   events(@ConnectedUser() user: JwtPayload): Observable<any> {
     const companyCode = user.companyCode;
 

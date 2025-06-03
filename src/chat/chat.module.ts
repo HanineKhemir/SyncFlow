@@ -8,6 +8,7 @@ import { Message } from './entities/message.entity';
 import { User } from 'src/user/entities/user.entity';
 import { Company } from 'src/company/entities/company.entity';
 import { JwtModule } from '@nestjs/jwt';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { JwtModule } from '@nestjs/jwt';
     JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: process.env.JWT_EXPIRATION || '1h' },
-    }),
+    }),AuthModule
   ],
   controllers: [ChatController],
   providers: [ChatService, ChatGateway],
