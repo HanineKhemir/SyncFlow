@@ -308,22 +308,19 @@ export default function Dashboard() {
     }
   });
 
- const formatActivityMessage = (event) => {
-  const actionMap = {
-    'create': 'created',
-    'update': 'updated',
-    'delete': 'deleted',
-    'complete': 'completed'
+  const formatActivityMessage = (event) => {
+    const actionMap = {
+      'create': 'created',
+      'update': 'updated',
+      'delete': 'deleted',
+      'complete': 'completed'
+    };
+
+    const action = actionMap[event.type] || event.type;
+    const taskTitle = event.targetTitle || 'a task'; 
+
+    return `${event.performedBy?.username || 'Someone'} ${action} ${taskTitle}`;
   };
-
-  const action = actionMap[event.type] || event.type;
-  const userName = event.performedBy?.username || 'Someone';
-  
-  // Use the actual task title from the event, with better fallbacks
-  const taskTitle = event.targetTitle || event.title || event.taskTitle || 'a task';
-
-  return `${userName} ${action} "${taskTitle}"`;
-};
 
   const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [activitiesError, setActivitiesError] = useState(null);
@@ -393,13 +390,12 @@ export default function Dashboard() {
   };
 
 
-
   // SSE Setup with Authentication 
   useEffect(() => {
     if (!token) return;
     
     const setupSSE = () => {
-        const eventSource = new EventSource(`http://localhost:3000/history/targeted-events/task?authorization=${token}`, {
+        const eventSource = new EventSource(`http://localhost:3000/history/events?authorization=${token}`, {
             withCredentials: true,
         });
 
