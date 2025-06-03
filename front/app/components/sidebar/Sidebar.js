@@ -21,7 +21,7 @@ const Sidebar = () => {
       
       <nav className={styles.nav}>
         <ul>
-          {user?.role === 'manager' && (
+          {(
           <li className={styles.navItem}>
             <Link href="/dashboard" className={styles.navLink}>
               <Home size={20} className={styles.icon} />

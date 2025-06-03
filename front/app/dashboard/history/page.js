@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@apollo/client';
 import { useAuth } from '@/app/hooks/useAuth';
 import { GET_TASKS_BY_COMPANY } from '@/app/graphql/tache';
+
 import styles from './page.module.css';
 
 // GraphQL queries for history operations
@@ -58,6 +59,7 @@ const GET_OPERATIONS_BY_USER = gql`
 
 export default function History() {
     const { token, user, isManager } = useAuth('');
+    const [inputValue, setInputValue] = useState('');
     const [companyId, setCompanyId] = useState(null);
     const [activeTab, setActiveTab] = useState('operations');
     const [currentPage, setCurrentPage] = useState(1);
@@ -136,7 +138,7 @@ export default function History() {
     // Setup Server-Sent Events for real-time updates
     useEffect(() => {
         if (!isManager || !token) return;
-        
+
         const setupSSE = () => {
             const eventSource = new EventSource(`http://localhost:3000/history/events?authorization=${token}`, {
                 withCredentials: true,
@@ -190,11 +192,18 @@ export default function History() {
         if (type !== 'targetType') setSelectedTargetType('');
     };
 
+
     const handleUserFilter = () => {
         console.log('👤 Applying user filter:', selectedUser);
         if (selectedUser) {
             setFilterType('user');
             setCurrentPage(1);
+            refetchUserFilter({
+                username: selectedUser,
+                start: 0,
+                limit: pageSize,
+                skip: !isManager || !token || filterType !== 'user' || !selectedUser,
+            });
         }
     };
 
@@ -315,25 +324,32 @@ export default function History() {
 
                         {filterType === 'user' && (
                             <div className={styles.filterGroup}>
-                                <label>User ID:</label>
+                                <label>User name:</label>
                                 <input
-                                    value={selectedUser}
-                                    onChange={(e) => setSelectedUser(e.target.value)}
-                                    className={styles.input}
-                                    placeholder="Enter user ID"
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
                                     onKeyPress={(e) => {
                                         if (e.key === 'Enter') {
-                                            handleUserFilter();
+                                            setSelectedUser(inputValue);
+                                            setFilterType('user');
+                                            setCurrentPage(1);
                                         }
                                     }}
+                                    className={styles.input}
+                                    placeholder="Enter user name"
                                 />
                                 <button
-                                    onClick={handleUserFilter}
+                                    onClick={() => {
+                                        setSelectedUser(inputValue);
+                                        setFilterType('user');
+                                        setCurrentPage(1);
+                                    }}
+                                    disabled={!inputValue}
                                     className={styles.filterButton}
-                                    disabled={!selectedUser}
                                 >
                                     Apply Filter
                                 </button>
+
                             </div>
                         )}
 
@@ -353,6 +369,7 @@ export default function History() {
                                     <option value="task">Task</option>
                                     <option value="user">User</option>
                                     <option value="event">Event</option>
+                                    <option value='noteline'>Note Line</option>
                                 </select>
                                 <button
                                     onClick={handleTargetTypeFilter}
