@@ -136,4 +136,8 @@ async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<Use
     await this.eventRepository.save(newEvent);
     this.eventEmitter.emit(`event.created.${user.company.code}`, newEvent);
   }
+
+  async logout(user: JwtPayload): Promise<{ message: string }> {
+    return { message: 'Successfully logged out' };
+  }
 }

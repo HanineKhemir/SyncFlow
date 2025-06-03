@@ -116,7 +116,7 @@ if (lineCount === undefined) {
   this.noteLineCounts.set(data.noteId, lineCount);
 }
 
-if (data.lineNumber >= lineCount - 5) {
+if (data.lineNumber = lineCount - 5) {
   const newLines = await this.noteLineService.createMultiple(5, data.noteId);
   this.noteLineCounts.set(data.noteId, lineCount + 5);
   console.log(`Created 5 new lines for note ${data.noteId}:`, newLines);
