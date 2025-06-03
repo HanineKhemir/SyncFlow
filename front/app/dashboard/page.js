@@ -1,30 +1,260 @@
 'use client'
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import { gql } from '@apollo/client';
 import styles from './Dashboard.module.css';
-import { useAuth } from '../hooks/useAuth'; 
+import { useAuth } from '../hooks/useAuth';
+import { GET_USERS_BY_COMPANY } from '../graphql/user';
+import { useRouter } from "next/navigation"; 
 
 const GET_TASK_STATS = gql`
-  query GetTaskStats {
-    tasks {
+  query GetTaskStats($companyId: ID!) {
+    tasksByCompany(companyId: $companyId) {
       id
       title
+      description
+      createdAt
       dueDate
       completed
-     
-      company {
+      assignedTo {
         id
+        username
       }
     }
   }
 `;
 
+const CREATE_TASK_MUTATION = gql`
+  mutation CreateTask($input: CreateTaskInput!) {
+    createTask(input: $input) {
+      id
+      title
+      description
+      dueDate
+      completed
+      assignedTo {
+        id
+        username
+      }
+    }
+  }
+`;
 
+// Add Task Modal Component
+const AddTaskModal = ({ isOpen, onClose, onSubmit, users, loading: usersLoading }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    dueDate: '',
+    assignedToId: ''
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.title.trim()) {
+      alert('Task title is required');
+      return;
+    }
+    
+    const taskData = {
+      ...formData,
+      assignedToId: formData.assignedToId || null
+    };
+    
+    onSubmit(taskData);
+    setFormData({ title: '', description: '', dueDate: '', assignedToId: '' });
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  if (!isOpen) return null;
+
+  // Ensure unique users for the dropdown
+  const uniqueUsers = users ? users.filter((user, index, self) => 
+    index === self.findIndex(u => u.id === user.id)
+  ) : [];
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: '#ffffff',
+        border: '2px solid #000000',
+        borderRadius: '0',
+        padding: '2rem',
+        width: '500px',
+        maxWidth: '90vw',
+        maxHeight: '90vh',
+        overflow: 'auto'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2 style={{ margin: 0, color: '#000000' }}>Add New Task</h2>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '1.5rem',
+              cursor: 'pointer',
+              color: '#000000'
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#000000', fontWeight: 'bold' }}>
+              Task Title *
+            </label>
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              required
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                border: '2px solid #000000',
+                borderRadius: '0',
+                fontSize: '1rem',
+                boxSizing: 'border-box'
+              }}
+              placeholder="Enter task title"
+            />
+          </div>
+
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#000000', fontWeight: 'bold' }}>
+              Description
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows={3}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                border: '2px solid #000000',
+                borderRadius: '0',
+                fontSize: '1rem',
+                boxSizing: 'border-box',
+                resize: 'vertical'
+              }}
+              placeholder="Enter task description (optional)"
+            />
+          </div>
+
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#000000', fontWeight: 'bold' }}>
+              Due Date
+            </label>
+            <input
+              type="date"
+              name="dueDate"
+              value={formData.dueDate}
+              onChange={handleChange}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                border: '2px solid #000000',
+                borderRadius: '0',
+                fontSize: '1rem',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#000000', fontWeight: 'bold' }}>
+              Assign To
+            </label>
+            <select
+              name="assignedToId"
+              value={formData.assignedToId}
+              onChange={handleChange}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                border: '2px solid #000000',
+                borderRadius: '0',
+                fontSize: '1rem',
+                boxSizing: 'border-box',
+                backgroundColor: '#ffffff'
+              }}
+            >
+              <option value="">Select a user (optional)</option>
+              {usersLoading ? (
+                <option disabled>Loading users...</option>
+              ) : (
+                uniqueUsers.map(user => (
+                  <option key={`user-${user.id}`} value={user.id}>
+                    {user.username} ({user.role})
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: '0.75rem 1.5rem',
+                border: '2px solid #000000',
+                backgroundColor: '#ffffff',
+                color: '#000000',
+                cursor: 'pointer',
+                fontSize: '1rem',
+                fontWeight: 'bold'
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              style={{
+                padding: '0.75rem 1.5rem',
+                border: '2px solid #000000',
+                backgroundColor: '#000000',
+                color: '#ffffff',
+                cursor: 'pointer',
+                fontSize: '1rem',
+                fontWeight: 'bold'
+              }}
+            >
+              Create Task
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 export default function Dashboard() {
-  const { token, isLoading: authLoading } = useAuth();
+  const { token, isLoading: authLoading, user,isManager } = useAuth();
+  const router = useRouter();
   const [taskData, setTaskData] = useState([]);
   const [stats, setStats] = useState({
     totalTasks: 0,
@@ -34,9 +264,11 @@ export default function Dashboard() {
   });
   const [recentActivities, setRecentActivities] = useState([]);
   const [lastRefresh, setLastRefresh] = useState(Date.now());
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const STORAGE_KEY = 'dashboard_recent_activities';
   
   const { loading: queryLoading, error, data, refetch } = useQuery(GET_TASK_STATS, {
+    variables: { companyId: user?.company?.id?.toString() },
     skip: !token,
     context: {
       headers: {
@@ -46,27 +278,55 @@ export default function Dashboard() {
     pollInterval: 60000, 
     notifyOnNetworkStatusChange: true
   });
-  const formatActivityMessage = (event) => {
-    const actionMap = {
-      'create': 'created',
-      'update': 'updated',
-      'delete': 'deleted',
-      'complete': 'completed'
-    };
 
-    const action = actionMap[event.type] || event.type;
-    const taskTitle = event.targetTitle || 'a task'; 
+  // Query to fetch users by company for task assignment
+  const { data: usersData, loading: usersLoading } = useQuery(GET_USERS_BY_COMPANY, {
+    variables: { companyId: user?.company?.id?.toString() },
+    skip: !token || !user?.company?.id,
+    context: {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : ''
+      }
+    }
+  });
 
-    return `${event.performedBy?.username || 'Someone'} ${action} ${taskTitle}`;
+  // Mutation to create a new task
+  const [createTaskMutation, { loading: createTaskLoading }] = useMutation(CREATE_TASK_MUTATION, {
+    context: {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : ''
+      }
+    },
+    onCompleted: () => {
+      setIsAddTaskModalOpen(false);
+      refetch();
+      fetchRecentActivities();
+    },
+    onError: (error) => {
+      console.error('Error creating task:', error);
+      alert('Error creating task: ' + error.message);
+    }
+  });
+
+ const formatActivityMessage = (event) => {
+  const actionMap = {
+    'create': 'created',
+    'update': 'updated',
+    'delete': 'deleted',
+    'complete': 'completed'
   };
+
+  const action = actionMap[event.type] || event.type;
+  const userName = event.performedBy?.username || 'Someone';
+  
+  // Use the actual task title from the event, with better fallbacks
+  const taskTitle = event.targetTitle || event.title || event.taskTitle || 'a task';
+
+  return `${userName} ${action} "${taskTitle}"`;
+};
 
   const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [activitiesError, setActivitiesError] = useState(null);
-
- 
-
-
- 
 
   const fetchRecentActivities = async () => {
     if (!token) return;
@@ -91,8 +351,8 @@ export default function Dashboard() {
       const taskEvents = historyData
         .filter(event => event.targettype === 'task')
         .slice(0, 5)
-        .map(event => ({
-          id: event.id,
+        .map((event, index) => ({
+          id: event.id || `activity-${index}-${event.date}`, // Ensure unique ID
           time: new Date(event.date).toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit',
@@ -106,7 +366,12 @@ export default function Dashboard() {
         }))
         .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      setRecentActivities(taskEvents);
+      // Remove duplicates based on ID
+      const uniqueActivities = taskEvents.filter((activity, index, self) => 
+        index === self.findIndex(a => a.id === activity.id)
+      );
+
+      setRecentActivities(uniqueActivities);
     } catch (error) {
       console.error('Error fetching recent activities:', error);
       setActivitiesError(error);
@@ -115,8 +380,22 @@ export default function Dashboard() {
     }
   };
 
+  const handleCreateTask = async (taskData) => {
+    try {
+      await createTaskMutation({
+        variables: {
+          input: taskData
+        }
+      });
+    } catch (error) {
+      console.error('Error in handleCreateTask:', error);
+    }
+  };
+
+
+
   // SSE Setup with Authentication 
- useEffect(() => {
+  useEffect(() => {
     if (!token) return;
     
     const setupSSE = () => {
@@ -132,7 +411,7 @@ export default function Dashboard() {
                     console.log('Received task event:', eventData);
 
                     const newActivity = {
-                        id: eventData.id,
+                        id: eventData.id || `sse-${Date.now()}-${Math.random()}`, // Ensure unique ID
                         time: new Date(eventData.date).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
@@ -145,7 +424,9 @@ export default function Dashboard() {
                     };
 
                     setRecentActivities(prev => {
-                        const updated = [newActivity, ...prev].slice(0, 5);
+                        // Remove duplicates and limit to 5 items
+                        const withoutDupes = prev.filter(activity => activity.id !== newActivity.id);
+                        const updated = [newActivity, ...withoutDupes].slice(0, 5);
                         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
                         return updated;
                     });
@@ -167,72 +448,82 @@ export default function Dashboard() {
             setTimeout(setupSSE, 5000);
         };
 
-        eventSource.current = eventSource;
+        return eventSource;
     };
 
-    setupSSE();
-
+    const eventSource = setupSSE();
     
-}, [token, refetch, fetchRecentActivities]);
+    return () => {
+        if (eventSource) {
+            eventSource.close();
+        }
+    };
+}, [token, refetch]);
 
   useEffect(() => {
-  const storedActivities = localStorage.getItem(STORAGE_KEY);
-  if (storedActivities) {
-    setRecentActivities(JSON.parse(storedActivities));
-  }
- 
-}, [token]);
+    const storedActivities = localStorage.getItem(STORAGE_KEY);
+    if (storedActivities) {
+      try {
+        const parsed = JSON.parse(storedActivities);
+        // Ensure unique activities when loading from storage
+        const uniqueActivities = parsed.filter((activity, index, self) => 
+          index === self.findIndex(a => a.id === activity.id)
+        );
+        setRecentActivities(uniqueActivities);
+      } catch (error) {
+        console.error('Error parsing stored activities:', error);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+    fetchRecentActivities();
+  }, [token]);
 
+  useEffect(() => {
+    if (data?.tasksByCompany) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); 
 
- useEffect(() => {
-  if (data?.tasks) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); 
+      const weeklyData = [...Array(7)].map((_, i) => {
+        const date = new Date(today);
+        date.setDate(date.getDate() + (i - 3)); 
+        const dateStr = date.toISOString().split('T')[0];
 
-    
-    const weeklyData = [...Array(7)].map((_, i) => {
-      const date = new Date(today);
-      date.setDate(date.getDate() + (i - 3)); 
-      const dateStr = date.toISOString().split('T')[0];
+        const dayTasks = data.tasksByCompany.filter(task => {
+          if (!task.dueDate) return false;
+          const taskDueDate = new Date(task.dueDate);
+          taskDueDate.setHours(0, 0, 0, 0);
+          return taskDueDate.toISOString().split('T')[0] === dateStr;
+        });
 
-      const dayTasks = data.tasks.filter(task => {
-        if (!task.dueDate) return false;
-        const taskDueDate = new Date(task.dueDate);
-        taskDueDate.setHours(0, 0, 0, 0);
-        return taskDueDate.toISOString().split('T')[0] === dateStr;
+        const completedTasks = dayTasks.filter(t => t.completed);
+
+        return {
+          date: dateStr,
+          displayDate: date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric'
+          }),
+          tasksCompleted: completedTasks.length,
+          totalTasks: dayTasks.length,
+          isToday: dateStr === today.toISOString().split('T')[0]
+        };
       });
 
-      const completedTasks = dayTasks.filter(t => t.completed);
+      setTaskData(weeklyData);
 
-      return {
-        date: dateStr,
-        displayDate: date.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric'
-        }),
-        tasksCompleted: completedTasks.length,
-        totalTasks: dayTasks.length,
-        isToday: dateStr === today.toISOString().split('T')[0]
-      };
-    });
+      const total = data.tasksByCompany.length;
+      const completed = data.tasksByCompany.filter(t => t.completed).length;
+      const pending = total - completed;
+      const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-    
-    setTaskData(weeklyData);
-
-   
-    const total = data.tasks.length;
-    const completed = data.tasks.filter(t => t.completed).length;
-    const pending = total - completed;
-    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-    setStats({
-      totalTasks: total,
-      completedTasks: completed,
-      pendingTasks: pending,
-      completionRate: rate
-    });
-  }
-}, [data, lastRefresh]);
+      setStats({
+        totalTasks: total,
+        completedTasks: completed,
+        pendingTasks: pending,
+        completionRate: rate
+      });
+    }
+  }, [data, lastRefresh]);
 
   const formatTooltipLabel = (label) => {
     const dataPoint = taskData.find(d => d.date === label);
@@ -256,7 +547,7 @@ export default function Dashboard() {
             {formatTooltipLabel(label)}
           </p>
           {payload.map((entry, index) => (
-            <p key={index} style={{ margin: '4px 0', color: entry.color }}>
+            <p key={`tooltip-${index}`} style={{ margin: '4px 0', color: entry.color }}>
               {`${entry.name}: ${entry.value}`}
             </p>
           ))}
@@ -275,16 +566,25 @@ export default function Dashboard() {
     <div className={styles.dashboardContainer}>
       <header className={styles.dashboardHeader}>
         <h1>Workspace Management Dashboard</h1>
-        <div className={styles.currentDate}>
-          {new Date().toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          })}
-          <span style={{ fontSize: '0.8em', color: '#666', marginLeft: '10px' }}>
-            Last updated: {new Date(lastRefresh).toLocaleTimeString()}
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button
+            onClick={() => setIsAddTaskModalOpen(true)}
+            disabled={createTaskLoading}
+            className={styles.addButton}
+          >
+            {createTaskLoading ? 'Creating...' : '+ Add Task'}
+          </button>
+          <div className={styles.currentDate}>
+            {new Date().toLocaleDateString('en-US', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
+            <span style={{ fontSize: '0.8em', color: '#666', marginLeft: '10px' }}>
+              Last updated: {new Date(lastRefresh).toLocaleTimeString()}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -354,7 +654,7 @@ export default function Dashboard() {
           <div className={styles.activityList}>
             {recentActivities.length > 0 ? (
               recentActivities.map((activity) => (
-                <div key={activity.id} className={styles.activityItem}>
+                <div key={`activity-${activity.id}`} className={styles.activityItem}>
                   <span className={styles.activityTime}>{activity.time}</span>
                   <span className={styles.activityText}>
                     {activity.text}
@@ -375,6 +675,15 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Add Task Modal */}
+      <AddTaskModal
+        isOpen={isAddTaskModalOpen}
+        onClose={() => setIsAddTaskModalOpen(false)}
+        onSubmit={handleCreateTask}
+        users={usersData?.usersByCompany?.filter(user => !user.deletedAt)}
+        loading={usersLoading}
+      />
     </div>
   );
 }

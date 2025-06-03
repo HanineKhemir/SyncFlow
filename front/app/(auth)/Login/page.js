@@ -33,7 +33,7 @@ export default function Login() {
       // Success - handle token & redirect
       const { access_token } = response.data
       localStorage.setItem('token', access_token)
-      router.push('/dashboard')
+      router.push('/dashboard/users')
 
     } catch (err) {
       // Axios wraps errors, so we check for response data
