@@ -120,7 +120,7 @@ export default function Dashboard() {
     if (!token) return;
     
     const setupSSE = () => {
-        const eventSource = new EventSource(`http://localhost:3000/history/events?authorization=${token}`, {
+        const eventSource = new EventSource(`http://localhost:3000/history/targeted-events/task?authorization=${token}`, {
             withCredentials: true,
         });
 

@@ -13,7 +13,7 @@ export default function ChatPage() {
   const [newMessage, setNewMessage] = useState('');
   const [newChatName, setNewChatName] = useState('');
   const [showCreateChat, setShowCreateChat] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [connectedUsers, setConnectedUsers] = useState([]);
   const [typingUsers, setTypingUsers] = useState(new Set());
   const [isTyping, setIsTyping] = useState(false);
   
@@ -23,33 +23,41 @@ export default function ChatPage() {
 
   // Initialize socket connection
   useEffect(() => {
-    if (!token) return;
+    if (!token || !user) return;
 
-    socketRef.current = io(`${API_BASE_URL}/chat`, {
-      transports: ['websocket', 'polling'],
-      auth: {
-        token: token
-      },
-      autoConnect: true,
-      upgrade: true,
-      rememberUpgrade: false
+    const newSocket = io('ws://localhost:3000/chat', {
+      query: {
+        Authorization: token
+      }
     });
 
-    const socket = socketRef.current;
+    socketRef.current = newSocket;
 
     // Socket event listeners
-    socket.on('connect', () => {
+    newSocket.on('connect', () => {
       console.log('Connected to chat server');
-      // Get online users
-      socket.emit('getOnlineUsers');
+      // Request current connected users
+      newSocket.emit('getConnectedUsers', (response) => {
+        if (response.success) {
+          console.log('Connected users:', response.connectedUsers);
+          setConnectedUsers(response.connectedUsers);
+        }
+      });
     });
 
-    socket.on('newMessage', (data) => {
+    // Listen for connected users updates
+    newSocket.on('connectedUsers', (users) => {
+      console.log('Connected users:', users);
+      // users is an array of {userId: number, username: string}
+      setConnectedUsers(users);
+    });
+
+    newSocket.on('newMessage', (data) => {
       if (data.chatId === selectedChat?.id) {
-        // Only add message if it's not from the current user (to avoid duplicates)
+        // Only add message if it's not already in the messages array (avoid duplicates)
         setMessages(prev => {
           const messageExists = prev.some(msg => msg.id === data.message.id);
-          if (!messageExists && data.message.sender.id !== user?.id) {
+          if (!messageExists) {
             return [...prev, data.message];
           }
           return prev;
@@ -59,15 +67,7 @@ export default function ChatPage() {
       fetchChats();
     });
 
-    socket.on('userOnline', (data) => {
-      setOnlineUsers(prev => [...prev.filter(u => u.userId !== data.userId), data]);
-    });
-
-    socket.on('userOffline', (data) => {
-      setOnlineUsers(prev => prev.filter(u => u.userId !== data.userId));
-    });
-
-    socket.on('userTyping', (data) => {
+    newSocket.on('userTyping', (data) => {
       if (data.chatId === selectedChat?.id) {
         setTypingUsers(prev => {
           const newSet = new Set(prev);
@@ -82,9 +82,9 @@ export default function ChatPage() {
     });
 
     return () => {
-      socket.disconnect();
+      newSocket.disconnect();
     };
-  }, [token, selectedChat?.id]);
+  }, [token, user, selectedChat?.id]);
 
   // Fetch chats
   const fetchChats = async () => {
@@ -147,57 +147,26 @@ export default function ChatPage() {
       console.error('Error creating chat:', error);
     }
   };
+// Send message
+const sendMessage = () => {
+  if (!newMessage.trim() || !selectedChat) return;
 
-  // Send message
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedChat) return;
+  const messageContent = newMessage;
+  setNewMessage('');
+  setIsTyping(false);
 
-    const messageContent = newMessage;
-    setNewMessage('');
-    setIsTyping(false);
-    
-    // Stop typing indicator
-    socketRef.current?.emit('typing', {
-      chatId: selectedChat.id,
-      isTyping: false
-    });
+  // Stop typing indicator
+  socketRef.current?.emit('typing', {
+    chatId: selectedChat.id,
+    isTyping: false
+  });
 
-    try {
-      // Send via HTTP API to ensure message is saved
-      const response = await fetch(`${API_BASE_URL}/chat/message`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          chatId: selectedChat.id,
-          content: messageContent
-        })
-      });
-
-      if (response.ok) {
-        const newMessageData = await response.json();
-        
-        // Add message to local state immediately
-        setMessages(prev => [...prev, newMessageData]);
-        
-        // Also emit via socket for other users
-        socketRef.current?.emit('sendMessage', {
-          chatId: selectedChat.id,
-          content: messageContent
-        });
-      } else {
-        // If HTTP request fails, restore the message input
-        setNewMessage(messageContent);
-        console.error('Failed to send message');
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      // Restore the message input on error
-      setNewMessage(messageContent);
-    }
-  };
+  // Emit message via WebSocket (Socket server should handle saving to DB)
+  socketRef.current?.emit('sendMessage', {
+    chatId: selectedChat.id,
+    content: messageContent
+  });
+};
 
   // Handle typing
   const handleTyping = () => {
@@ -452,17 +421,17 @@ export default function ChatPage() {
           ))}
         </div>
 
-        {/* Online Users */}
+        {/* Connected Users */}
         <div style={{ 
           padding: '15px', 
           borderTop: '1px solid #ddd',
           backgroundColor: 'white'
         }}>
           <h4 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>
-            Online Users ({onlineUsers.length})
+            Connected Users ({connectedUsers.length})
           </h4>
           <div style={{ fontSize: '12px', color: '#666' }}>
-            {onlineUsers.map(user => (
+            {connectedUsers.map(user => (
               <div key={user.userId} style={{ marginBottom: '2px' }}>
                 🟢 {user.username}
               </div>
