@@ -103,7 +103,10 @@ input UpdateUserInput {
   password: String
   role: Role
 }
-
+type EventTitleByDateDTO {
+  date: Date!
+  titles: [String!]!
+}
 type Query {
   hello: String
   users: [User!]!
@@ -120,8 +123,8 @@ type Query {
   task(id: ID!): Task
   tasksByUser(userId: ID!): [Task!]!
   tasksByCompany(companyId: ID!): [Task!]!
-  allEventTitles: [String!]!
   eventTitlesByDate(date: Date!): [String!]!
+  allUpcomingEvents(startDate: Date!): [EventTitleByDateDTO!]!
 }
 
 type Mutation {

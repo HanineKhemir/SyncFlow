@@ -54,26 +54,33 @@ async create(dto: CreateEventDto) {
       .where('DATE(event.date) = :dateStr', { dateStr })
       .getMany();
   }
-  // async getEventNamesByDate(date: Date): Promise<{ name: string; date: Date }[]> {
-  //   const startOfDay = new Date(date);
-  //   startOfDay.setHours(0, 0, 0, 0);
 
-  //   const endOfDay = new Date(date);
-  //   endOfDay.setHours(23, 59, 59, 999);
+  async getEventTitlesByDate(companyCode: string, date: string) {
+  return this.repository
+    .createQueryBuilder('event')
+    .innerJoin('event.user', 'user')
+    .innerJoin('user.company', 'company')
+    .where('company.code = :code', { code: companyCode })
+    .andWhere('event.date = :date', { date })
+    .select(['event.title', 'event.date'])
+    .getRawMany();
+}
 
-  //   const events = await this.repository.find({
-  //     where: {
-  //       date: Between(startOfDay, endOfDay),
-  //     },
-  //     select: ['title', 'date'],
-  //   });
 
-  //   return events.map(event => ({
-  //     name: event.title,
-  //     date: event.date,
-  //   }));
-  // }
-  
+async getUpcomingWeekEvents(companyCode: string, startDate: string) {
+  const start = new Date(startDate);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 7);
+
+  return this.repository
+    .createQueryBuilder('event')
+    .innerJoin('event.user', 'user')
+    .innerJoin('user.company', 'company')
+    .where('company.code = :code', { code: companyCode })
+    .andWhere('event.date BETWEEN :start AND :end', { start, end })
+    .select(['event.title', 'event.date'])
+    .getRawMany();
+}
 
   async update(id: number, dto: UpdateEventDto) {
     const event = await this.repository.preload({ id, ...dto });
