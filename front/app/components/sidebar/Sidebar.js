@@ -76,7 +76,7 @@ const Sidebar = () => {
           )}
           
           {/* Show Taches only to non-managers */}
-          {user?.role !== 'manager' && (
+          { (
             <li className={styles.navItem}>
               <Link href="/dashboard/taches" className={styles.navLink}>
                 <ListTodo size={20} className={styles.icon} />
