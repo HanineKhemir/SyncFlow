@@ -28,6 +28,11 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto): Promise<{ access_token: string }> {
     return this.authService.login(loginDto);
   }
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  async logout(@ConnectedUser() user: JwtPayload) {
+    return this.authService.logout(user);
+  }
   @Delete('delete-user/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles([Role.MANAGER])
