@@ -82,6 +82,23 @@ async getUpcomingWeekEvents(companyCode: string, startDate: string) {
     .getRawMany();
 }
 
+async getUpcomingMonthEvents(companyCode: string, startDate: string) {
+  const start = new Date(startDate);
+  const end = new Date(start);
+  end.setMonth(start.getMonth() + 1);
+  end.setDate(end.getDate() - 1); 
+  return this.repository
+    .createQueryBuilder('event')
+    .innerJoin('event.user', 'user')
+    .innerJoin('user.company', 'company')
+    .where('company.code = :code', { code: companyCode })
+    .andWhere('event.date BETWEEN :start AND :end', { start, end })
+    .select(['event.title', 'event.date'])
+    .getRawMany();  
+}
+  
+  
+  
   async update(id: number, dto: UpdateEventDto) {
     const event = await this.repository.preload({ id, ...dto });
     if (!event) throw new NotFoundException('Event not found');

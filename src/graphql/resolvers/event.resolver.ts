@@ -15,7 +15,7 @@ export const EventQuery = {
 
     return context.eventService.getEventTitlesByDate(user.company.id, args.date);
   },
-
+ //for next 7 days
   async allUpcomingEvents(_parent: any, args: { startDate: string }, context: any): Promise<EventTitleByDateDTO[]> {
     const user = context.req?.user || context.user;
     if (!user || !user.company) {
@@ -23,5 +23,15 @@ export const EventQuery = {
     }
 
     return context.eventService.getUpcomingWeekEvents(user.company.id, args.startDate);
+  }
+
+  //for next 30 days
+  , async allUpcomingEvents30Days(_parent: any, args: { startDate: string }, context: any): Promise<EventTitleByDateDTO[]> {
+    const user = context.req?.user || context.user;
+    if (!user || !user.company) {
+      throw new Error('Unauthorized: user or company missing from context');
+    }
+
+    return context.eventService.getUpcomingMonthEvents(user.company.id, args.startDate);
   }
 };
