@@ -467,3 +467,152 @@
     color: #666;
     border: 2px solid #000;
   }
+  /* Add these styles to your existing users.module.css file */
+
+/* Toggle Container */
+.toggleContainer {
+  display: flex;
+  align-items: center;
+  margin-left: 1rem;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #333;
+  gap: 0.5rem;
+}
+
+.toggleInput {
+  display: none;
+}
+
+.toggleSlider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background-color: #ccc;
+  border-radius: 24px;
+  transition: background-color 0.3s;
+}
+
+.toggleSlider::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: white;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.3s;
+}
+
+.toggleInput:checked + .toggleSlider {
+  background-color: #007bff;
+}
+
+.toggleInput:checked + .toggleSlider::before {
+  transform: translateX(20px);
+}
+
+/* Update Button */
+.updateButton {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.updateButton:hover {
+  background-color: #218838;
+}
+
+.updateButton:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Enhance existing styles for better UX */
+.editButton:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.deleteButton:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Status badges enhancement */
+.statusBadge.inactive {
+  background-color: #dc3545;
+  color: white;
+}
+
+.statusBadge.active {
+  background-color: #28a745;
+  color: white;
+}
+
+/* Card styling for deleted users */
+.userCard:has(.statusBadge.inactive) {
+  opacity: 0.8;
+  border-left: 4px solid #dc3545;
+}
+
+/* Form styling improvements */
+.formInput:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Recover button styling */
+.recoverButton {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.8rem;
+  transition: background-color 0.2s;
+}
+
+.recoverButton:hover {
+  background-color: #218838;
+}
+
+/* Modal enhancements */
+.modalHeader h2 {
+  margin: 0;
+  color: #333;
+}
+
+.modalForm .formGroup {
+  margin-bottom: 1rem;
+}
+
+.modalForm label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #333;
+}
+
+/* Controls container enhancement */
+.controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  align-items: center;
+  flex-wrap: wrap;
+}

@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/app/hooks/useAuth';
 import { io } from 'socket.io-client';
+import styles from './chat.module.css';
 
 const API_BASE_URL = 'http://localhost:3000'; // Adjust to your backend URL
 
@@ -147,26 +148,27 @@ export default function ChatPage() {
       console.error('Error creating chat:', error);
     }
   };
-// Send message
-const sendMessage = () => {
-  if (!newMessage.trim() || !selectedChat) return;
 
-  const messageContent = newMessage;
-  setNewMessage('');
-  setIsTyping(false);
+  // Send message
+  const sendMessage = () => {
+    if (!newMessage.trim() || !selectedChat) return;
 
-  // Stop typing indicator
-  socketRef.current?.emit('typing', {
-    chatId: selectedChat.id,
-    isTyping: false
-  });
+    const messageContent = newMessage;
+    setNewMessage('');
+    setIsTyping(false);
 
-  // Emit message via WebSocket (Socket server should handle saving to DB)
-  socketRef.current?.emit('sendMessage', {
-    chatId: selectedChat.id,
-    content: messageContent
-  });
-};
+    // Stop typing indicator
+    socketRef.current?.emit('typing', {
+      chatId: selectedChat.id,
+      isTyping: false
+    });
+
+    // Emit message via WebSocket (Socket server should handle saving to DB)
+    socketRef.current?.emit('sendMessage', {
+      chatId: selectedChat.id,
+      content: messageContent
+    });
+  };
 
   // Handle typing
   const handleTyping = () => {
@@ -245,42 +247,24 @@ const sendMessage = () => {
   }, [token]);
 
   if (!user) {
-    return <div style={{ padding: '20px' }}>Please log in to access chat.</div>;
+    return (
+      <div className={styles.loginPrompt}>
+        Please log in to access chat.
+      </div>
+    );
   }
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      height: '100vh', 
-      fontFamily: 'Arial, sans-serif'
-    }}>
+    <div className={styles.container}>
       {/* Sidebar */}
-      <div style={{ 
-        width: '300px', 
-        borderRight: '1px solid #ddd', 
-        display: 'flex', 
-        flexDirection: 'column',
-        backgroundColor: '#f8f9fa'
-      }}>
+      <div className={styles.sidebar}>
         {/* Header */}
-        <div style={{ 
-          padding: '20px', 
-          borderBottom: '1px solid #ddd',
-          backgroundColor: 'white'
-        }}>
-          <h2 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>Chats</h2>
+        <div className={styles.sidebarHeader}>
+          <h2 className={styles.sidebarTitle}>Chats</h2>
           {isManager && (
             <button 
               onClick={() => setShowCreateChat(true)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
+              className={styles.newChatButton}
             >
               New Chat
             </button>
@@ -289,64 +273,27 @@ const sendMessage = () => {
 
         {/* Create Chat Modal */}
         {showCreateChat && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }}>
-            <div style={{
-              backgroundColor: 'white',
-              padding: '20px',
-              borderRadius: '8px',
-              width: '300px'
-            }}>
-              <h3 style={{ marginTop: 0 }}>Create New Chat</h3>
+          <div className={styles.modalOverlay}>
+            <div className={styles.modal}>
+              <h3 className={styles.modalTitle}>Create New Chat</h3>
               <input
                 type="text"
                 placeholder="Chat name..."
                 value={newChatName}
                 onChange={(e) => setNewChatName(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && createChat()}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  marginBottom: '10px',
-                  boxSizing: 'border-box'
-                }}
+                className={styles.modalInput}
               />
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div className={styles.modalButtons}>
                 <button 
                   onClick={createChat}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#28a745',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
+                  className={styles.createButton}
                 >
                   Create
                 </button>
                 <button 
                   onClick={() => setShowCreateChat(false)}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#6c757d',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
+                  className={styles.cancelButton}
                 >
                   Cancel
                 </button>
@@ -356,45 +303,24 @@ const sendMessage = () => {
         )}
 
         {/* Chat List */}
-        <div style={{ flex: 1, overflow: 'auto' }}>
+        <div className={styles.chatList}>
           {chats.map(chat => (
             <div 
               key={chat.id}
               onClick={() => selectChat(chat)}
-              style={{
-                padding: '15px',
-                borderBottom: '1px solid #eee',
-                cursor: 'pointer',
-                backgroundColor: selectedChat?.id === chat.id ? '#e3f2fd' : 'white',
-                position: 'relative'
-              }}
+              className={`${styles.chatItem} ${selectedChat?.id === chat.id ? styles.chatItemActive : ''}`}
             >
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between',
-                alignItems: 'flex-start'
-              }}>
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ 
-                    margin: '0 0 5px 0', 
-                    fontSize: '16px',
-                    fontWeight: selectedChat?.id === chat.id ? 'bold' : 'normal'
-                  }}>
+              <div className={styles.chatItemContent}>
+                <div className={styles.chatItemMain}>
+                  <h4 className={`${styles.chatItemTitle} ${selectedChat?.id === chat.id ? styles.chatItemTitleActive : ''}`}>
                     {chat.name}
                   </h4>
                   {chat.lastMessage && (
-                    <p style={{ 
-                      margin: 0, 
-                      fontSize: '12px', 
-                      color: '#666',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
+                    <p className={styles.chatItemLastMessage}>
                       {chat.lastMessage.senderUsername}: {chat.lastMessage.content}
                     </p>
                   )}
-                  <span style={{ fontSize: '10px', color: '#999' }}>
+                  <span className={styles.chatItemCount}>
                     {chat.messageCount} messages
                   </span>
                 </div>
@@ -404,14 +330,7 @@ const sendMessage = () => {
                       e.stopPropagation();
                       deleteChat(chat.id);
                     }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#dc3545',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      padding: '2px 6px'
-                    }}
+                    className={styles.deleteButton}
                   >
                     Delete
                   </button>
@@ -422,18 +341,15 @@ const sendMessage = () => {
         </div>
 
         {/* Connected Users */}
-        <div style={{ 
-          padding: '15px', 
-          borderTop: '1px solid #ddd',
-          backgroundColor: 'white'
-        }}>
-          <h4 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>
+        <div className={styles.connectedUsers}>
+          <h4 className={styles.connectedUsersTitle}>
             Connected Users ({connectedUsers.length})
           </h4>
-          <div style={{ fontSize: '12px', color: '#666' }}>
+          <div className={styles.connectedUsersList}>
             {connectedUsers.map(user => (
-              <div key={user.userId} style={{ marginBottom: '2px' }}>
-                🟢 {user.username}
+              <div key={user.userId} className={styles.connectedUser}>
+                <div className={styles.onlineIndicator}></div>
+                {user.username}
               </div>
             ))}
           </div>
@@ -441,65 +357,39 @@ const sendMessage = () => {
       </div>
 
       {/* Main Chat Area */}
-      <div style={{ 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'column',
-        backgroundColor: 'white'
-      }}>
+      <div className={styles.chatArea}>
         {selectedChat ? (
           <>
             {/* Chat Header */}
-            <div style={{ 
-              padding: '20px', 
-              borderBottom: '1px solid #ddd',
-              backgroundColor: '#f8f9fa'
-            }}>
-              <h2 style={{ margin: 0, fontSize: '18px' }}>
+            <div className={styles.chatHeader}>
+              <h2 className={styles.chatHeaderTitle}>
                 {selectedChat.name}
               </h2>
             </div>
 
             {/* Messages */}
-            <div style={{ 
-              flex: 1, 
-              overflow: 'auto', 
-              padding: '20px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px'
-            }}>
+            <div className={styles.messagesContainer}>
               {messages.map(message => (
                 <div 
                   key={message.id}
-                  style={{
-                    alignSelf: message.sender.id === user.id ? 'flex-end' : 'flex-start',
-                    maxWidth: '70%'
-                  }}
+                  className={`${styles.messageWrapper} ${
+                    message.sender.id === user.id 
+                      ? styles.messageWrapperSent 
+                      : styles.messageWrapperReceived
+                  }`}
                 >
-                  <div style={{
-                    padding: '10px 15px',
-                    borderRadius: '18px',
-                    backgroundColor: message.sender.id === user.id ? '#007bff' : '#e9ecef',
-                    color: message.sender.id === user.id ? 'white' : 'black'
-                  }}>
+                  <div className={`${styles.message} ${
+                    message.sender.id === user.id 
+                      ? styles.messageSent 
+                      : styles.messageReceived
+                  }`}>
                     {message.sender.id !== user.id && (
-                      <div style={{ 
-                        fontSize: '12px', 
-                        opacity: 0.8, 
-                        marginBottom: '4px',
-                        fontWeight: 'bold'
-                      }}>
+                      <div className={styles.messageSender}>
                         {message.sender.username}
                       </div>
                     )}
-                    <div>{message.content}</div>
-                    <div style={{ 
-                      fontSize: '10px', 
-                      opacity: 0.7, 
-                      marginTop: '4px',
-                      textAlign: 'right'
-                    }}>
+                    <div className={styles.messageContent}>{message.content}</div>
+                    <div className={styles.messageTime}>
                       {new Date(message.createdAt).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit'
@@ -511,12 +401,7 @@ const sendMessage = () => {
               
               {/* Typing Indicator */}
               {typingUsers.size > 0 && (
-                <div style={{ 
-                  fontSize: '12px', 
-                  color: '#666',
-                  fontStyle: 'italic',
-                  padding: '5px 15px'
-                }}>
+                <div className={styles.typingIndicator}>
                   {Array.from(typingUsers).join(', ')} {typingUsers.size === 1 ? 'is' : 'are'} typing...
                 </div>
               )}
@@ -525,12 +410,8 @@ const sendMessage = () => {
             </div>
 
             {/* Message Input */}
-            <div style={{ 
-              padding: '20px', 
-              borderTop: '1px solid #ddd',
-              backgroundColor: '#f8f9fa'
-            }}>
-              <div style={{ display: 'flex', gap: '10px' }}>
+            <div className={styles.messageInputContainer}>
+              <div className={styles.messageInputWrapper}>
                 <input
                   type="text"
                   placeholder="Type a message..."
@@ -540,27 +421,12 @@ const sendMessage = () => {
                     handleTyping();
                   }}
                   onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    border: '1px solid #ddd',
-                    borderRadius: '20px',
-                    outline: 'none',
-                    fontSize: '14px'
-                  }}
+                  className={styles.messageInput}
                 />
                 <button 
                   onClick={sendMessage}
                   disabled={!newMessage.trim()}
-                  style={{
-                    padding: '12px 20px',
-                    backgroundColor: newMessage.trim() ? '#007bff' : '#ccc',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '20px',
-                    cursor: newMessage.trim() ? 'pointer' : 'not-allowed',
-                    fontSize: '14px'
-                  }}
+                  className={`${styles.sendButton} ${!newMessage.trim() ? styles.sendButtonDisabled : ''}`}
                 >
                   Send
                 </button>
@@ -568,14 +434,8 @@ const sendMessage = () => {
             </div>
           </>
         ) : (
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '18px',
-            color: '#666'
-          }}>
+          <div className={styles.emptyState}>
+            <div className={styles.emptyStateIcon}>💬</div>
             Select a chat to start messaging
           </div>
         )}

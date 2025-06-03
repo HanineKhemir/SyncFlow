@@ -21,7 +21,7 @@ const Sidebar = () => {
       
       <nav className={styles.nav}>
         <ul>
-          {(
+           {user?.role === 'manager' && (
           <li className={styles.navItem}>
             <Link href="/dashboard" className={styles.navLink}>
               <Home size={20} className={styles.icon} />
@@ -76,7 +76,7 @@ const Sidebar = () => {
           )}
           
           {/* Show Taches only to non-managers */}
-          {user?.role !== 'manager' && (
+          { (
             <li className={styles.navItem}>
               <Link href="/dashboard/taches" className={styles.navLink}>
                 <ListTodo size={20} className={styles.icon} />

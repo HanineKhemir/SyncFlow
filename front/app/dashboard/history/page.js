@@ -79,9 +79,8 @@ export default function History() {
     }, [user]);
 
     // Tasks query
-    console.log('🔄 Fetching tasks for user:', user?.id);
     const { data: tasksData, loading: tasksLoading, error: tasksError, refetch: refetchTasks } = useQuery(GET_TASKS_BY_COMPANY, {
-        variables: { companyId: user?.id },
+        variables: { userId: user?.id?.toString() },
         skip: !user?.id,
         context: {
             headers: {
@@ -89,7 +88,6 @@ export default function History() {
             },
         },
     });
-    console.log('🔄 Tasks query result:', { tasksData, tasksLoading, tasksError });
 
     // Main operations query - always fetch for 'all' filter
     const { data: operationsData, loading: operationsLoading, error: operationsError, refetch: refetchOperations } = useQuery(GET_OPERATIONS, {
@@ -134,6 +132,20 @@ export default function History() {
             },
         },
     });
+
+    // Debug logging
+    useEffect(() => {
+        console.log('🔍 Debug Info:');
+        console.log('- isManager:', isManager);
+        console.log('- token:', !!token);
+        console.log('- filterType:', filterType);
+        console.log('- selectedTargetType:', selectedTargetType);
+        console.log('- selectedUser:', selectedUser);
+        console.log('- targetTypeData:', targetTypeData);
+        console.log('- targetTypeError:', targetTypeError);
+        console.log('- userFilterData:', userFilterData);
+        console.log('- userFilterError:', userFilterError);
+    }, [isManager, token, filterType, selectedTargetType, selectedUser, targetTypeData, targetTypeError, userFilterData, userFilterError]);
 
     // Setup Server-Sent Events for real-time updates
     useEffect(() => {
@@ -305,16 +317,7 @@ export default function History() {
 
             {activeTab === 'operations' && (
                 <div className={styles.operationsSection}>
-                    {/* Debug Info Display */}
-                    <div style={{ padding: '10px', background: '#f0f0f0', margin: '10px 0', fontSize: '12px' }}>
-                        <strong>Debug Info:</strong><br />
-                        Filter Type: {filterType}<br />
-                        Selected Target Type: {selectedTargetType}<br />
-                        Selected User: {selectedUser}<br />
-                        Current Operations Count: {getCurrentOperations().length}<br />
-                        Loading: {getCurrentLoading() ? 'Yes' : 'No'}<br />
-                        Error: {getCurrentError() ? getCurrentError().message : 'None'}
-                    </div>
+                 
 
                     {/* Filters */}
                     <div className={styles.filters}>
