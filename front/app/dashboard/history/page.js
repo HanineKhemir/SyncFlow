@@ -79,8 +79,9 @@ export default function History() {
     }, [user]);
 
     // Tasks query
+    console.log('🔄 Fetching tasks for user:', user?.id);
     const { data: tasksData, loading: tasksLoading, error: tasksError, refetch: refetchTasks } = useQuery(GET_TASKS_BY_COMPANY, {
-        variables: { userId: user?.id?.toString() },
+        variables: { companyId: user?.id },
         skip: !user?.id,
         context: {
             headers: {
@@ -88,6 +89,7 @@ export default function History() {
             },
         },
     });
+    console.log('🔄 Tasks query result:', { tasksData, tasksLoading, tasksError });
 
     // Main operations query - always fetch for 'all' filter
     const { data: operationsData, loading: operationsLoading, error: operationsError, refetch: refetchOperations } = useQuery(GET_OPERATIONS, {
@@ -132,20 +134,6 @@ export default function History() {
             },
         },
     });
-
-    // Debug logging
-    useEffect(() => {
-        console.log('🔍 Debug Info:');
-        console.log('- isManager:', isManager);
-        console.log('- token:', !!token);
-        console.log('- filterType:', filterType);
-        console.log('- selectedTargetType:', selectedTargetType);
-        console.log('- selectedUser:', selectedUser);
-        console.log('- targetTypeData:', targetTypeData);
-        console.log('- targetTypeError:', targetTypeError);
-        console.log('- userFilterData:', userFilterData);
-        console.log('- userFilterError:', userFilterError);
-    }, [isManager, token, filterType, selectedTargetType, selectedUser, targetTypeData, targetTypeError, userFilterData, userFilterError]);
 
     // Setup Server-Sent Events for real-time updates
     useEffect(() => {
@@ -467,41 +455,38 @@ export default function History() {
             )}
 
             {activeTab === 'tasks' && (
-                <div className={styles.tasksSection}>
-                    {tasksLoading ? (
-                        <div className={styles.loading}>Loading tasks...</div>
-                    ) : tasksError ? (
-                        <div className={styles.error}>Error loading tasks: {tasksError.message}</div>
-                    ) : (
-                        <div className={styles.tasksGrid}>
-                            {tasksData?.getTasksByCompany?.map((task) => (
-                                <div key={task.id} className={styles.taskCard}>
-                                    <h3>{task.title}</h3>
-                                    <p>{task.description}</p>
-                                    <div className={styles.taskMeta}>
-                                        <span className={`${styles.status} ${styles[task.status?.toLowerCase()]}`}>
-                                            {task.status}
-                                        </span>
-                                        <span className={styles.assignee}>
-                                            Assigned to: {task.assignedTo?.name || 'Unassigned'}
-                                        </span>
-                                    </div>
-                                    <div className={styles.taskDates}>
-                                        <small>Created: {formatTimestamp(task.createdAt)}</small>
-                                        {task.dueDate && (
-                                            <small>Due: {formatTimestamp(task.dueDate)}</small>
-                                        )}
-                                    </div>
-                                </div>
-                            )) || []}
-
-                            {(!tasksData?.getTasksByCompany || tasksData.getTasksByCompany.length === 0) && (
-                                <div className={styles.noData}>No tasks found</div>
-                            )}
+    <div className={styles.tasksSection}>
+        {tasksLoading ? (
+            <div className={styles.loading}>Loading tasks...</div>
+        ) : tasksError ? (
+            <div className={styles.error}>Error loading tasks: {tasksError.message}</div>
+        ) : (
+            <div className={styles.tasksGrid}>
+                {tasksData?.tasksByCompany?.map((task) => (
+                    <div key={task.id} className={styles.taskCard}>
+                        <h3>{task.title}</h3>
+                        <p>{task.description}</p>
+                        <div className={styles.taskMeta}>
+                            <span className={`${styles.status} ${task.completed ? styles.completed : styles.pending}`}>
+                                {task.completed ? 'Completed' : 'Pending'}
+                            </span>
+                            <span className={styles.assignee}>
+                                Assigned to: {task.assignedTo?.username || 'Unassigned'}
+                            </span>
                         </div>
-                    )}
-                </div>
-            )}
+                        <div className={styles.taskDates}>
+                            <small>Due: {formatTimestamp(task.dueDate)}</small>
+                        </div>
+                    </div>
+                ))}
+
+                {(!tasksData?.tasksByCompany || tasksData.tasksByCompany.length === 0) && (
+                    <div className={styles.noData}>No tasks found for this company</div>
+                )}
+            </div>
+        )}
+    </div>
+)}
         </div>
     );
 }
