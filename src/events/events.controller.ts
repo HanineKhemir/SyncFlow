@@ -14,26 +14,7 @@ export class EventsController {
   @Post()
   create(@ConnectedUser() user:JwtPayload ,@Body() dto: CreateEventDto) {
     dto.createdById = user.sub; 
-    return this.service.create(dto);
+    return this.service.create(dto, user.sub, user.companyCode);
   }
 
-  @Get()
-  findAll() {
-    return this.service.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(+id);
-  }
-
-  @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateEventDto) {
-    return this.service.update(+id, dto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(+id);
-  }
 }

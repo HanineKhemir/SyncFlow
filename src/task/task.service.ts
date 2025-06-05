@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { Task } from './entities/task.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -155,5 +155,26 @@ export class TaskService {
       select: TaskSelectOptions,
       relations: ['company', 'assignedTo'],
     });
+  }
+  async gettasksbyday(date: string, companyCode : string): Promise<Task[]> {
+    const endOfDay = new Date(date);
+    endOfDay.setHours(0, 0, 0, 0);
+    console.log('End of day:', endOfDay);
+    const companyId = await this.companyRepository.findOne({
+      where: { code: companyCode },
+      select: ['id'],
+    });
+    if (!companyId) {
+      throw new NotFoundException('Company not found');
+    }
+    return this.taskRepository.find({
+      where: {
+        company: { id: companyId.id },
+        dueDate: endOfDay,
+      },
+      select: TaskSelectOptions,
+      relations: ['company', 'assignedTo'],
+    });
+    
   }
 }

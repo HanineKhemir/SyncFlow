@@ -7,10 +7,11 @@ import { Operation } from '../history/entities/operation.entity';
 import { UserModule } from '../user/user.module';
 import { CreateEventService } from '../history/create-event.service';
 import { Event } from './entities/event.entity';
+import { Company } from 'src/company/entities/company.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Operation,Event]),
+    TypeOrmModule.forFeature([Operation,Event, Company]),
     UserModule
   ],
   controllers: [EventsController],

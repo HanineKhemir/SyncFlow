@@ -34,7 +34,7 @@ export class User {
   @DeleteDateColumn()
   deletedAt?: Date;
 
-  @OneToMany(() => Event, event => event.user)
+  @OneToMany(() => Event, event => event.createdBy)
   events: Event[];
  
 }

@@ -2,8 +2,8 @@ import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, DeleteDat
 import { User } from '../../user/entities/user.entity';
 import { Note } from '../../note/entities/note.entity';
 import { Task } from '../../task/entities/task.entity';
-import { Schedule } from '../../schedule/entities/schedule.entity';
 import { Operation } from 'src/history/entities/operation.entity';
+import { Event } from '../../events/entities/event.entity';
 @Entity()
 export class Company {
   @PrimaryGeneratedColumn()
@@ -24,8 +24,9 @@ export class Company {
   @OneToMany(() => Task, task => task.company)
   tasks: Task[];
 
-  @OneToMany(() => Schedule, schedule => schedule.company)
-  schedules: Schedule[];
+  @OneToMany(() => Event, Event => Event.company)
+  events: Event[];
+
   @OneToMany(() => Operation, operation => operation.company)
   operations: Operation[]; // Assuming Operation has a company relation
 

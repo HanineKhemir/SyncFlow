@@ -65,6 +65,13 @@ type NoteLine {
   lastEditedBy: User
   lineNumber: Int
 }
+type Event {
+  id: ID!
+  title: String!
+  description: String
+  date: Date!
+  createdBy: User
+}
 
 type Task {
   id: ID!
@@ -113,16 +120,18 @@ type Query {
   usersByCompany(companyId: ID!): [User!]!
   deletedUsers: [User!]!
   operation(limit:Int, start:Int): [Operation!]!
-  NoteLines(noteId: ID!, limit:Int, start:Int): [NoteLine!]!
+  NoteLines(noteId: ID!, limit:Int, start:Int): [NoteLine]!
   operationBytargetType(targetType: Target!, start:Int, limit:Int): [Operation]!
   operationByUser(username: String!, start:Int, limit:Int): [Operation]!
-  OperationByTarget(targetType: Target!, targetId: Int!, start:Int, limit:Int): [Operation!]
-  tasks: [Task!]!
+  OperationByTarget(targetType: Target!, targetId: Int!, start:Int, limit:Int): [Operation]!
+  tasks: [Task]!
   task(id: ID!): Task
-  tasksByUser(userId: ID!): [Task!]!
-  tasksByCompany(companyId: ID!): [Task!]!
-  allEventTitles: [String!]!
-  eventTitlesByDate(date: Date!): [String!]!
+  tasksByUser(userId: ID!): [Task]!
+  tasksbyday(date: String!): [Task]!
+  tasksByCompany(companyId: ID!): [Task]!
+  getAllEvents: [Event]!
+  EventByMonth(date: String!): [Event]!
+  EventByDay(date: String!): [Event]!
 }
 
 type Mutation {

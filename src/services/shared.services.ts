@@ -17,12 +17,11 @@ import { CreateEventService } from 'src/history/create-event.service';
 import { OperationType } from 'src/enum/operation-type';
 import { Note } from 'src/note/entities/note.entity';
 import { NoteLine } from 'src/note/entities/noteline.entity';
-import { Schedule } from 'src/schedule/entities/schedule.entity';
 import { Task } from 'src/task/entities/task.entity';
 import { Event } from '../events/entities/event.entity';
 
 @Injectable()
-export class SharedService<T extends Note | NoteLine | Schedule | Task | User | Event> {
+export class SharedService<T extends Note | NoteLine | Task | User | Event> {
   constructor(protected readonly repository: Repository<T>, protected readonly createEventService: CreateEventService) {
 
   }
@@ -74,7 +73,7 @@ export class SharedService<T extends Note | NoteLine | Schedule | Task | User | 
     try {
       const entityt = this.repository.create(data);
       const entity =  await this.repository.save(entityt);
-      if(!(entity instanceof Note || entity instanceof NoteLine || entity instanceof Schedule || entity instanceof Task || entity instanceof User || entity instanceof Event)) {
+      if(!(entity instanceof Note || entity instanceof NoteLine || entity instanceof Task || entity instanceof User || entity instanceof Event)) {
         throw new InternalServerErrorException('Invalid entity type for creation');
       }
       this.createEventService.createEvent({
@@ -106,7 +105,6 @@ export class SharedService<T extends Note | NoteLine | Schedule | Task | User | 
     !(
       entity instanceof Note ||
       entity instanceof NoteLine ||
-      entity instanceof Schedule ||
       entity instanceof Task ||
       entity instanceof User ||
       entity instanceof Event

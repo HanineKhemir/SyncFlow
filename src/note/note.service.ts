@@ -8,7 +8,6 @@ import { CreateEventService } from 'src/history/create-event.service';
 import { DeepPartial, Repository } from 'typeorm';
 import { NoteLine } from './entities/noteline.entity';
 import { OperationType } from 'src/enum/operation-type';
-import { Schedule } from 'src/schedule/entities/schedule.entity';
 import { Task } from 'src/task/entities/task.entity';
 import { User } from 'src/user/entities/user.entity';
 import { CompanyService } from 'src/company/company.service';

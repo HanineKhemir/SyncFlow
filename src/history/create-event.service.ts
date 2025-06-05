@@ -11,7 +11,6 @@ import { Target } from 'src/enum/target.enum';
 import { User } from 'src/user/entities/user.entity';
 import { Note } from 'src/note/entities/note.entity';
 import { NoteLine } from 'src/note/entities/noteline.entity';
-import { Schedule } from 'src/schedule/entities/schedule.entity';
 import { Task } from 'src/task/entities/task.entity';
 import { Event } from 'src/events/entities/event.entity';
 @Injectable()
@@ -36,27 +35,24 @@ export class CreateEventService {
 
   if (data instanceof User) {
     targetType = Target.USER;
-    const { company, ...rest } = data;
+    const { company, salt, password, ...rest } = data;
     restData = rest;
   } else if (data instanceof Task) {
     targetType = Target.TASK;
-    const { company, ...rest } = data;
-    restData = rest;
-  } else if (data instanceof Schedule) {
-    targetType = Target.SCHEDULE;
-    const { company, ...rest } = data;
-    restData = rest;
+    const { company, assignedTo, ...rest } = data;
+    restData = { ...rest, assignedTo: assignedTo?.username };
   } else if (data instanceof Note) {
     targetType = Target.NOTE;
     const { company, ...rest } = data;
     restData = rest;
   } else if (data instanceof NoteLine) {
     targetType = Target.NOTELINE;
-    const { note, ...rest } = data;
+    const { note, lastEditedBy,...rest } = data;
     restData = rest;
   } else if (data instanceof Event) {
     targetType = Target.EVENT;
-    restData = data;
+    const { company, createdBy, ...rest } = data;
+    restData = {rest, createdBy: createdBy?.username };
   }
   else {
     throw new Error('Could not determine target type');

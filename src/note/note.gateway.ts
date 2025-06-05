@@ -109,14 +109,14 @@ async handleSoftLock(
 ) {
   if (!user) return;
 
-  
+  console.log(`Received softlock request from ${user.username} for note ${data.noteId} at line ${data.lineNumber}`);
 let lineCount = this.noteLineCounts.get(data.noteId);
 if (lineCount === undefined) {
   lineCount = await this.noteService.lineCount(data.noteId);
   this.noteLineCounts.set(data.noteId, lineCount);
 }
 
-if (data.lineNumber = lineCount - 5) {
+if (data.lineNumber >= lineCount - 5) {
   const newLines = await this.noteLineService.createMultiple(5, data.noteId);
   this.noteLineCounts.set(data.noteId, lineCount + 5);
   console.log(`Created 5 new lines for note ${data.noteId}:`, newLines);
@@ -177,6 +177,7 @@ if (data.lineNumber = lineCount - 5) {
     @ConnectedUser() user: JwtPayload,
   ) {
     if (!user) return;
+    console.log(`Received softunlock request from ${user.username} for note ${data.noteId} at line ${data.lineNumber}`);
 
     const userMap = this.noteLocks.get(data.noteId);
     if (userMap && userMap.get(user.username) === data.lineNumber) {

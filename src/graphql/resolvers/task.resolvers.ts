@@ -1,5 +1,6 @@
 // Field resolvers for Task type
 export const Task = {
+
   async assignedTo(parent: any, _args: any, context: any) {
     if (!parent.assignedTo?.id) return null;
     return context.userService.findOne(parent.assignedTo.id);
@@ -40,12 +41,22 @@ export const TaskQuery = {
 
   async tasksByCompany(_parent: any, args: { companyId: number }, context: any) {
     const companyID = context.companyService.findByCode(context.user.companyCode);
-    console.log('Fetching tasks for company:', args.companyId);
+    console.log('Fetching tasks for company:', companyID);
     if (!context.user) {
       throw new Error('Authentication required');
     }
 
-    return context.taskService.getTasksByCompany(companyID.id);
+    return context.taskService.getTasksByCompany(args.companyId);
+  },
+  async tasksbyday(_parent: any, args: { date: string }, context: any) {
+    console.log('Context user:', args);
+    console.log('Context user:', context.user);
+    if (!context.user) {
+      throw new Error('Authentication required');
+    }
+    console.log('Fetching tasks for day:', args.date);
+    const date = new Date(args.date);
+    return await context.taskService.gettasksbyday(date, context.user.companyCode);
   }
 };
 

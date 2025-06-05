@@ -1,11 +1,22 @@
 export const EventQuery = {
-  async allEventTitles(_parent: any, _args: any, context) {
-    const events = await context.eventsService.findAll();
-    return events.map(e => e.title);
+  async getAllEvents(_parent: any, _args: any, context) {
+    console.log(context.user);
+    const code = context.user.companyCode;
+  
+    const events = await context.eventsService.getAll(code);
+    return events;
   },
 
-  async eventTitlesByDate(_parent: any, args: { date: string }, context) {
-    const events = await context.eventsService.findByDate(new Date(args.date));
-    return events.map(e => e.title);
-  }
-};
+  async EventByMonth(_parent: any, args: { date: string }, context) {
+    const date = new Date(args.date);
+    
+    const events = await context.eventsService.EventByMonth(context.user.companyCode, date);
+    return events;
+  },
+  async EventByDay(_parent: any, args: { date: string }, context) {
+    const companyCode = context.user.companyCode;
+    const date = new Date(args.date);
+    
+    return context.eventsService.EventByDay(context.user.companyCode, date);
+}
+}

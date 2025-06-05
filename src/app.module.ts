@@ -8,11 +8,9 @@ import { NoteModule } from './note/note.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { TaskModule } from './task/task.module';
-import { ScheduleModule } from './schedule/schedule.module';
 import { CompanyModule } from './company/company.module';
 import { NoteLine } from './note/entities/noteline.entity';
 import { Task } from './task/entities/task.entity';
-import { Schedule } from './schedule/entities/schedule.entity';
 import { Company } from './company/entities/company.entity';
 import { Note } from './note/entities/note.entity';
 import { Operation } from './history/entities/operation.entity';
@@ -44,7 +42,7 @@ import { SseAuthMiddleware } from './middleware/sse-auth.middleware';
           username: dbConfig.databaseUsername,
           password: dbConfig.databasePassword,
           database: dbConfig.databaseName,
-          entities: [User, Note, Task, Schedule, NoteLine, Company, Operation, Message, Chat, Event],
+          entities: [User, Note, Task, NoteLine, Company, Operation, Message, Chat, Event],
           synchronize: true,
         };
       },
@@ -55,7 +53,6 @@ import { SseAuthMiddleware } from './middleware/sse-auth.middleware';
   AuthModule,
   UserModule,
   TaskModule,
-  ScheduleModule,
   CompanyModule,
   HistoryModule,
   ChatModule,

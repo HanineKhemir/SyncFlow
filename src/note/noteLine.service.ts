@@ -11,7 +11,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
 import { CreateEventService } from 'src/history/create-event.service';
 import { OperationType } from 'src/enum/operation-type';
-import { Schedule } from 'src/schedule/entities/schedule.entity';
 import { Task } from 'src/task/entities/task.entity';
 import { use } from 'passport';
 
@@ -92,6 +91,7 @@ export class NoteLineService extends SharedService<NoteLine> {
   const savedNoteLines = await this.repository.save(noteLines);
 
   const newLineCount = savedNoteLines.length + note.lineCount;
+  console.log("New line count:", newLineCount);
 
   await this.notesRepo.update(noteId, {
     updatedAt: new Date(),

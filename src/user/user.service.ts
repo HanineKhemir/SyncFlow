@@ -66,10 +66,15 @@ export class UserService {
 
   private async createOperation(user: User, type: OperationType, data: any): Promise<void> {
     const { company, ...restData } = data;
+    try {
+    restData.company = company.id;
+    }catch (error) {
+      console.log("kys");}
+    const {salt, password, ...actdata}  = restData;
     
     const operation = this.operationRepository.create({
       type,
-      description: JSON.stringify(restData),
+      description: JSON.stringify(actdata),
       performedBy: user,
       target: data.id,
       targettype: Target.USER,
@@ -123,5 +128,17 @@ export class UserService {
     await this.createOperation(performingUser, OperationType.RECOVER, userToRecover);
 
     return userToRecover;
+  }
+  async getUsernames(companyCode: string): Promise<string[]> {
+    const company = await this.companyRepository.findOne({
+      where: { code: companyCode },
+      select: ['id'],
+    });
+    
+    const users = await this.userRepository.find({
+      where: { company: { id: company?.id } },
+      select: ['username'],
+    });
+    return users.map(user => user.username);
   }
 }
