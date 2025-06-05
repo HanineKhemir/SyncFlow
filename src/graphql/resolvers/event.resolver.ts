@@ -1,3 +1,11 @@
+import { Resolver, Query } from '@nestjs/graphql';
+import { EventTitleByDateDTO } from '../../events/dto/event-title-by-date.dto';
+
+@Resolver(() => EventTitleByDateDTO)
+export class EventResolver {
+  constructor() {}
+}
+
 export const EventQuery = {
   async getAllEvents(_parent: any, _args: any, context) {
     console.log(context.user);

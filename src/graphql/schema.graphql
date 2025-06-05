@@ -111,7 +111,10 @@ input UpdateUserInput {
   password: String
   role: Role
 }
-
+type EventTitleByDateDTO {
+  date: Date!
+  titles: [String!]!
+}
 type Query {
   hello: String
   users: [User!]!

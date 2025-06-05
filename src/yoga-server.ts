@@ -82,6 +82,7 @@ if (token) {
 
 
       return {
+        companyCode: user?.companyCode || null,
         user, 
         eventsService: app.get(EventsService),
         noteService,
