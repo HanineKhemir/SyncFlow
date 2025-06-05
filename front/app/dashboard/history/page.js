@@ -19,7 +19,7 @@ const GET_OPERATIONS = gql`
       targettype
       target
       performedBy {
-        id
+        username
       }
     }
   }
@@ -35,7 +35,7 @@ const GET_OPERATIONS_BY_TARGET_TYPE = gql`
       targettype
       target
       performedBy {
-        id
+        username
       }
     }
   }
@@ -51,14 +51,14 @@ const GET_OPERATIONS_BY_USER = gql`
       targettype
       target
       performedBy {
-        id
+        username
       }
     }
   }
 `;
 
 export default function History() {
-    const { token, user, isManager } = useAuth('');
+    const { token, user, isManager } = useAuth();
     const [inputValue, setInputValue] = useState('');
     const [companyId, setCompanyId] = useState(null);
     const [activeTab, setActiveTab] = useState('operations');
@@ -69,7 +69,9 @@ export default function History() {
     const [selectedTargetType, setSelectedTargetType] = useState('');
     const [realTimeEvents, setRealTimeEvents] = useState([]);
     const eventSourceRef = useRef(null);
-
+    const [suggestions, setSuggestions] = useState([]);
+    const [allUsernames, setAllUsernames] = useState([]);
+    const[tokenReady, setTokenReady] = useState(false);
     // Set company ID when user is available
     useEffect(() => {
         if (user?.company?.id) {
@@ -102,8 +104,45 @@ export default function History() {
             },
         },
     });
+    useEffect(() => {
+        if (!token) {
+            const timeout = setTimeout(() => {
+                setTokenReady(true);
+            }, 100);
+            return () => clearTimeout(timeout);
+        } else {
+            setTokenReady(true);
+        }
+    }, [token]);
 
-    // Target type filtered operations query
+    useEffect(() => {
+        const fetchUsernames = async () => {
+            if (!tokenReady) {
+  return <div className={styles.loading}>Initializing...</div>;
+}
+            const res = await fetch('http://localhost:3000/users/user-names', {
+                method: 'Get',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await res.json();
+            console.log('🔍 Fetched usernames:', data);
+            setAllUsernames(data);
+        };
+
+        fetchUsernames();
+    }, [tokenReady]);
+
+    useEffect(() => {
+        console.log('🔍 Fetching usernames for suggestions:', allUsernames);
+        const filtered = allUsernames.filter(name =>
+            name.toLowerCase().includes(inputValue.toLowerCase())
+        );
+        setSuggestions(filtered);
+    }, [inputValue, allUsernames]);
+
     const { data: targetTypeData, loading: targetTypeLoading, error: targetTypeError, refetch: refetchTargetType } = useQuery(GET_OPERATIONS_BY_TARGET_TYPE, {
         variables: {
             targetType: selectedTargetType,
@@ -317,7 +356,7 @@ export default function History() {
 
             {activeTab === 'operations' && (
                 <div className={styles.operationsSection}>
-                 
+
 
                     {/* Filters */}
                     <div className={styles.filters}>
@@ -335,35 +374,57 @@ export default function History() {
                         </div>
 
                         {filterType === 'user' && (
-                            <div className={styles.filterGroup}>
-                                <label>User name:</label>
-                                <input
-                                    value={inputValue}
-                                    onChange={(e) => setInputValue(e.target.value)}
-                                    onKeyPress={(e) => {
-                                        if (e.key === 'Enter') {
-                                            setSelectedUser(inputValue);
-                                            setFilterType('user');
-                                            setCurrentPage(1);
-                                        }
-                                    }}
-                                    className={styles.input}
-                                    placeholder="Enter user name"
-                                />
-                                <button
-                                    onClick={() => {
-                                        setSelectedUser(inputValue);
-                                        setFilterType('user');
-                                        setCurrentPage(1);
-                                    }}
-                                    disabled={!inputValue}
-                                    className={styles.filterButton}
-                                >
-                                    Apply Filter
-                                </button>
-
-                            </div>
-                        )}
+  <div className={styles.filterGroup}>
+    <label>User name:</label>
+    <div className={styles.inputWrapper}>
+      <input
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            setSelectedUser(inputValue);
+            setFilterType('user');
+            setCurrentPage(1);
+            setSuggestions([]);
+          }
+        }}
+        className={styles.input}
+        placeholder="Enter user name"
+      />
+      {inputValue.trim() && suggestions.length > 0 && (
+        <ul className={styles.suggestionsList}>
+          {suggestions.map((name, index) => (
+            <li
+              key={index}
+              onClick={() => {
+                setInputValue(name);
+                setSelectedUser(name);
+                setFilterType('user');
+                setCurrentPage(1);
+                setSuggestions([]);
+              }}
+              className={styles.suggestionItem}
+            >
+              {name}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+    <button
+      onClick={() => {
+        setSelectedUser(inputValue);
+        setFilterType('user');
+        setCurrentPage(1);
+        setSuggestions([]);
+      }}
+      disabled={!inputValue}
+      className={styles.filterButton}
+    >
+      Apply Filter
+    </button>
+  </div>
+)}
 
                         {filterType === 'targetType' && (
                             <div className={styles.filterGroup}>
@@ -408,7 +469,7 @@ export default function History() {
                                         <th>Action</th>
                                         <th>Target Type</th>
                                         <th>Target ID</th>
-                                        <th>User ID</th>
+                                        <th>Username</th>
                                         <th>Details</th>
                                     </tr>
                                 </thead>
@@ -423,7 +484,7 @@ export default function History() {
                                             </td>
                                             <td>{operation.targettype}</td>
                                             <td>{operation.target}</td>
-                                            <td>{operation.performedBy?.id}</td>
+                                            <td>{operation.performedBy?.username}</td>
                                             <td>{operation.description || 'N/A'}</td>
                                         </tr>
                                     ))}
@@ -458,38 +519,38 @@ export default function History() {
             )}
 
             {activeTab === 'tasks' && (
-    <div className={styles.tasksSection}>
-        {tasksLoading ? (
-            <div className={styles.loading}>Loading tasks...</div>
-        ) : tasksError ? (
-            <div className={styles.error}>Error loading tasks: {tasksError.message}</div>
-        ) : (
-            <div className={styles.tasksGrid}>
-                {tasksData?.tasksByCompany?.map((task) => (
-                    <div key={task.id} className={styles.taskCard}>
-                        <h3>{task.title}</h3>
-                        <p>{task.description}</p>
-                        <div className={styles.taskMeta}>
-                            <span className={`${styles.status} ${task.completed ? styles.completed : styles.pending}`}>
-                                {task.completed ? 'Completed' : 'Pending'}
-                            </span>
-                            <span className={styles.assignee}>
-                                Assigned to: {task.assignedTo?.username || 'Unassigned'}
-                            </span>
-                        </div>
-                        <div className={styles.taskDates}>
-                            <small>Due: {formatTimestamp(task.dueDate)}</small>
-                        </div>
-                    </div>
-                ))}
+                <div className={styles.tasksSection}>
+                    {tasksLoading ? (
+                        <div className={styles.loading}>Loading tasks...</div>
+                    ) : tasksError ? (
+                        <div className={styles.error}>Error loading tasks: {tasksError.message}</div>
+                    ) : (
+                        <div className={styles.tasksGrid}>
+                            {tasksData?.tasksByCompany?.map((task) => (
+                                <div key={task.id} className={styles.taskCard}>
+                                    <h3>{task.title}</h3>
+                                    <p>{task.description}</p>
+                                    <div className={styles.taskMeta}>
+                                        <span className={`${styles.status} ${task.completed ? styles.completed : styles.pending}`}>
+                                            {task.completed ? 'Completed' : 'Pending'}
+                                        </span>
+                                        <span className={styles.assignee}>
+                                            Assigned to: {task.assignedTo?.username || 'Unassigned'}
+                                        </span>
+                                    </div>
+                                    <div className={styles.taskDates}>
+                                        <small>Due: {formatTimestamp(task.dueDate)}</small>
+                                    </div>
+                                </div>
+                            ))}
 
-                {(!tasksData?.tasksByCompany || tasksData.tasksByCompany.length === 0) && (
-                    <div className={styles.noData}>No tasks found for this company</div>
-                )}
-            </div>
-        )}
-    </div>
-)}
+                            {(!tasksData?.tasksByCompany || tasksData.tasksByCompany.length === 0) && (
+                                <div className={styles.noData}>No tasks found for this company</div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

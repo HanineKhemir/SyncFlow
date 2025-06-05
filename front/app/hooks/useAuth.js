@@ -8,6 +8,7 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
+  
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -23,10 +24,9 @@ export function AuthProvider({ children }) {
             username: decoded.username,
             email: decoded.email,
             role: decoded.role,
-            // Add company information based on your JWT structure
             company: {
               id: decoded.companyId, // This matches your JWT structure
-              name: decoded.companyName || 'Unknown Company' // Add name if available
+              code : decoded.companyCode, // Assuming you have a company code in your JWT
             }
           });
         } catch (error) {
@@ -51,7 +51,17 @@ export function AuthProvider({ children }) {
         // Add company information based on your JWT structure
         company: {
           id: decoded.companyId, // This matches your JWT structure
-          name: decoded.companyName || 'Unknown Company' // Add name if available
+          code : decoded.companyCode, // Assuming you have a company code in your JWT
+        }
+      });
+      console.log('User logged in:', {
+        id: decoded.sub || decoded.id,
+        username: decoded.username,
+        email: decoded.email,
+        role: decoded.role,
+        company: {
+          id: decoded.companyId,
+          code : decoded.companyCode,
         }
       });
     } catch (error) {

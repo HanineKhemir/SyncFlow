@@ -7,24 +7,21 @@ import styles from './calendar.module.css';
 import { useAuth } from '@/app/hooks/useAuth';
 import { useQuery } from '@apollo/client';
 import { GET_USERS_BY_COMPANY } from '@/app/graphql/user';
+import { GET_EVENTS_BY_MONTH } from '@/app/graphql/events';
 
 const localizer = momentLocalizer(moment);
 
 export default function CalendarEvents() {
   const { user, token } = useAuth();
-  const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [showEventModal, setShowEventModal] = useState(false);
+  const [currentView, setCurrentView] = useState('month');
   const [companyId, setCompanyId] = useState(null);
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
     date: new Date(),
-    assignedUserId: ''
   });
 
   // Set company ID when user is available
@@ -35,94 +32,94 @@ export default function CalendarEvents() {
     }
   }, [user]);
 
+  // GraphQL query to fetch events by month
+  const { data: eventsData, loading: eventsLoading, error: eventsError, refetch: refetchEvents } = useQuery(
+    GET_EVENTS_BY_MONTH,
+    {
+      variables: { date: currentDate },
+      skip: !token,
+      context: {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : ''
+        }
+      },
+      errorPolicy: 'all',
+      onCompleted: (data) => {
+        console.log('✅ Events query completed successfully:', data);
+      },
+      onError: (error) => {
+        console.log('❌ Events query error:', error);
+      }
+    }
+  );
+
   // GraphQL query to fetch users by company
   const { data: usersData, loading: usersLoading, error: usersError } = useQuery(
     GET_USERS_BY_COMPANY,
-   {
-    skip: !token || !companyId, // Skip query if not authenticated or no companyId
-    variables: {
-      companyId: companyId
-    },
-    context: {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : ''
+    {
+      skip: !token || !companyId,
+      variables: {
+        companyId: companyId
+      },
+      context: {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : ''
+        }
+      },
+      errorPolicy: 'all',
+      onCompleted: (data) => {
+        console.log('✅ Users query completed successfully:', data);
+      },
+      onError: (error) => {
+        console.log('❌ Users query error:', error);
       }
-    },
-    errorPolicy: 'all',
-    onCompleted: (data) => {
-      console.log('✅ Query completed successfully:', data);
-    },
-    onError: (error) => {
-      console.log('❌ Query error:', error);
     }
-  }
-    
   );
 
-  useEffect(() => {
-    if (token) {
-      fetchEvents();
-    }
-  }, [currentDate, token]);
+  // State for create event loading
+  const [createEventLoading, setCreateEventLoading] = useState(false);
 
-  const fetchEvents = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch('http://localhost:3000/events', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) throw new Error('Failed to fetch events');
-      
-      const eventsData = await response.json();
-      
-      // Safely transform the data even if empty
-      console.log(eventsData)
-      const formattedEvents = Array.isArray(eventsData) 
-        ? eventsData.map(event => ({
-            id: event.id,
-            title: event.title || 'Untitled Event',
-            start: event.date ? new Date(event.date) : new Date(),
-            end: event.date ? new Date(new Date(event.date).getTime() + (event.duration || 60 * 60 * 1000)) : new Date(Date.now() + 60 * 60 * 1000),
-            description: event.description || '',
-            assignedUser: event.user.username || 'Not assigned'
-          }))
-        : [];
-      
-      setEvents(formattedEvents);
-      updateUpcomingEvents(formattedEvents);
-    } catch (err) {
-      console.error('Error fetching events:', err);
-      setError(err.message);
-      setEvents([]);
-      setUpcomingEvents([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Transform GraphQL events data for calendar
+const events = eventsData?.EventByMonth 
+  ? eventsData.EventByMonth.map(event => {
+      const start = moment.utc(event.date).local().toDate();
+      const end = moment.utc(event.date).add(1, 'hour').local().toDate();
 
-  const updateUpcomingEvents = (eventsList) => {
-    const today = moment().startOf('day');
-    const nextWeek = moment().add(7, 'days').endOf('day');
+      return {
+        id: event.id,
+        title: event.title || 'Untitled Event',
+        start,
+        end,
+        description: event.description || '',
+      };
+    })
+  : [];
+
+
+
+  // Get events for the current month for the sidebar
+  const getCurrentMonthEvents = () => {
+    if (!eventsData?.EventByMonth) return [];
     
-    const upcoming = Array.isArray(eventsList)
-      ? eventsList
-          .filter(event => {
-            try {
-              const eventDate = moment(event.start);
-              return eventDate.isValid() && eventDate.isAfter(today) && eventDate.isBefore(nextWeek);
-            } catch {
-              return false;
-            }
-          })
-          .sort((a, b) => moment(a.start).diff(moment(b.start)))
-      : [];
-      
-    setUpcomingEvents(upcoming);
+    const currentMonthStart = moment(currentDate).startOf('month');
+    const currentMonthEnd = moment(currentDate).endOf('month');
+    
+    return eventsData.EventByMonth
+      .filter(event => {
+      const eventDate = moment.utc(event.date).local();
+      return eventDate.isBetween(currentMonthStart, currentMonthEnd, null, '[]');
+    })
+      .sort((a, b) => moment(a.date).diff(moment(b.date)))
+      .map(event => ({
+        id: event.id,
+        title: event.title || 'Untitled Event',
+        start: event.date ? new Date(event.date) : new Date(),
+        description: event.description || '',
+        createdBy: event.createdBy?.username || 'Not created by anyone'
+      }));
   };
+
+  const currentMonthEvents = getCurrentMonthEvents();
 
   const handleSelectEvent = (event) => {
     setSelectedEvent(event);
@@ -133,7 +130,13 @@ export default function CalendarEvents() {
   };
   
   const handleNavigate = (newDate) => {
+    console.log('📅 Navigating to new date:', newDate);
     setCurrentDate(newDate);
+    
+    // Refetch events for the new month
+    refetchEvents({
+      date: newDate
+    });
   };
 
   const handleCreateEvent = async () => {
@@ -147,6 +150,8 @@ export default function CalendarEvents() {
       return;
     }
     
+    setCreateEventLoading(true);
+    
     try {
       const response = await fetch('http://localhost:3000/events', {
         method: 'POST',
@@ -158,7 +163,6 @@ export default function CalendarEvents() {
           title: newEvent.title,
           description: newEvent.description,
           date: newEvent.date.toISOString(),
-          assignedUserId: newEvent.assignedUserId || null
         })
       });
       
@@ -173,12 +177,17 @@ export default function CalendarEvents() {
         title: '',
         description: '',
         date: new Date(),
-        assignedUserId: ''
       });
-      fetchEvents();
+      
+      // Refetch events for current month
+      refetchEvents({
+        date: currentDate
+      });
     } catch (error) {
       console.error('Error creating event:', error);
-      setError(error.message);
+      alert('Failed to create event: ' + error.message);
+    } finally {
+      setCreateEventLoading(false);
     }
   };
 
@@ -197,16 +206,19 @@ export default function CalendarEvents() {
     setShowEventModal(true);
   };
 
-  const eventStyleGetter = () => {
-    return {
-      style: {
-        backgroundColor: '#ffffff',
-        color: '#000000',
-        border: '2px solid #000000',
-        borderRadius: '0',
-      }
-    };
+  const eventStyleGetter = (event, start, end, isSelected) => {
+  return {
+    style: {
+      backgroundColor: '#000000',
+      color: '#ffffff',
+      border: isSelected ? '3px solid #555555' : '2px solid #000000',
+      borderRadius: '6px',
+      padding: '4px 8px',
+      fontSize: '0.9rem',
+    }
   };
+};
+
   
   const formatEventTime = (date) => {
     return moment(date).isValid() ? moment(date).format('h:mm A') : 'Invalid time';
@@ -218,6 +230,10 @@ export default function CalendarEvents() {
 
   // Get company users for dropdown
   const companyUsers = usersData?.usersByCompany || [];
+
+  // Determine loading and error states
+  const loading = eventsLoading || usersLoading;
+  const error = eventsError || usersError;
 
   return (
     <div className={styles.pageContainer}>
@@ -236,16 +252,21 @@ export default function CalendarEvents() {
               <button 
                 className={styles.addEventButton}
                 onClick={() => setShowEventModal(true)}
+                disabled={loading}
               >
                 + Add Event
               </button>
             )}
           </div>
           
-          {loading && <div className={styles.loading}>Loading events...</div>}
-          {error && <div className={styles.error}>Error: {error}</div>}
+          {eventsLoading && <div className={styles.loading}>Loading events...</div>}
+          {eventsError && <div className={styles.error}>Error: {eventsError.message}</div>}
           
           <div className={styles.customCalendarWrapper}>
+            <div style={{ marginBottom: '1rem', fontWeight: 500 }}>
+  Viewing: {currentView.charAt(0).toUpperCase() + currentView.slice(1)} View
+</div>
+
             <Calendar
               localizer={localizer}
               events={events}
@@ -260,23 +281,27 @@ export default function CalendarEvents() {
               views={['month', 'week', 'day']}
               defaultView="month"
               date={currentDate}
+              onView={(view) => setCurrentView(view)}
+
+              tooltipAccessor={(event) => `${event.title}\n${event.description || ''}`}
+              
             />
           </div>
         </div>
         
         <div className={styles.upcomingEventsSection}>
           <div className={styles.sectionHeader}>
-            <h2>Upcoming Events</h2>
+            <h2>Events in {moment(currentDate).format('MMMM YYYY')}</h2>
           </div>
-          {loading ? (
-            <div className={styles.loading}>Loading upcoming events...</div>
-          ) : error ? (
-            <div className={styles.error}>Error loading upcoming events</div>
-          ) : upcomingEvents.length === 0 ? (
-            <p className={styles.noEvents}>No upcoming events in the next 7 days.</p>
+          {eventsLoading ? (
+            <div className={styles.loading}>Loading events...</div>
+          ) : eventsError ? (
+            <div className={styles.error}>Error loading events</div>
+          ) : currentMonthEvents.length === 0 ? (
+            <p className={styles.noEvents}>No events this month.</p>
           ) : (
             <div className={styles.eventsList}>
-              {upcomingEvents.map(event => (
+              {currentMonthEvents.map(event => (
                 <div 
                   key={event.id} 
                   className={styles.eventCard}
@@ -288,7 +313,7 @@ export default function CalendarEvents() {
                   </div>
                   <h3 className={styles.eventTitle}>{event.title}</h3>
                   <div className={styles.eventAssigned}>
-                    👤 {event.assignedUser}
+                    👤 {event.createdBy}
                   </div>
                 </div>
               ))}
@@ -308,10 +333,10 @@ export default function CalendarEvents() {
                 {formatEventDate(selectedEvent.start)}, {formatEventTime(selectedEvent.start)}
               </div>
             </div>
-            {selectedEvent.assignedUser && (
+            {selectedEvent.createdBy && (
               <div className={styles.detailsSection}>
-                <div className={styles.detailsLabel}>Assigned To:</div>
-                <div className={styles.detailsContent}>{selectedEvent.assignedUser}</div>
+                <div className={styles.detailsLabel}>Created By:</div>
+                <div className={styles.detailsContent}>{selectedEvent.createdBy}</div>
               </div>
             )}
             {selectedEvent.description && (
@@ -324,7 +349,7 @@ export default function CalendarEvents() {
         </div>
       )}
 
-      {/* New Event Modal - Simplified */}
+      {/* New Event Modal */}
       {showEventModal && (
         <div className={styles.eventDetailsOverlay}>
           <div className={styles.eventDetailsCard}>
@@ -354,28 +379,6 @@ export default function CalendarEvents() {
             </div>
             
             <div className={styles.detailsSection}>
-              <label className={styles.detailsLabel}>Assign to User</label>
-              {usersLoading ? (
-                <div className={styles.loading}>Loading users...</div>
-              ) : usersError ? (
-                <div className={styles.error}>Error loading users: {usersError.message}</div>
-              ) : (
-                <select
-                  value={newEvent.assignedUserId}
-                  onChange={(e) => handleNewEventChange('assignedUserId', e.target.value)}
-                  className={styles.selectField}
-                >
-                  <option value="">Select a user (optional)</option>
-                  {companyUsers.map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.username} ({user.role})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-            
-            <div className={styles.detailsSection}>
               <label className={styles.detailsLabel}>Description</label>
               <textarea
                 value={newEvent.description}
@@ -385,20 +388,20 @@ export default function CalendarEvents() {
                 placeholder="Enter event description (optional)"
               />
             </div>
-            
             <div className={styles.modalActions}>
               <button 
                 onClick={() => setShowEventModal(false)}
                 className={styles.cancelButton}
+                disabled={createEventLoading}
               >
                 Cancel
               </button>
               <button 
                 onClick={handleCreateEvent}
                 className={styles.saveButton}
-                disabled={!newEvent.title.trim()}
+                disabled={!newEvent.title.trim() || createEventLoading}
               >
-                Create Event
+                {createEventLoading ? 'Creating...' : 'Create Event'}
               </button>
             </div>
           </div>

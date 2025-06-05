@@ -1,122 +1,231 @@
-
-
 .dashboardContainer {
     background-color: #ffffff;
     color: #000000;
     min-height: 100vh;
     padding: 2rem;
     font-family: 'Inter', 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  }
-  
-  .dashboardHeader {
+}
+
+.dashboardHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
     border-bottom: 2px solid #000000;
     padding-bottom: 1rem;
-  }
-  
+}
 
-  
-  .currentDate {
+.todaySection {
+  margin-top: 2rem;
+  background-color: #ffffff;
+  padding: 1.5rem 2rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease;
+}
+.todaySection li {
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  background-color: #f9f9f9;
+  transition: background-color 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.todaySection li.assignedToMe {
+  background-color: #e6fffa; /* teal-50 */
+  border-left: 4px solid #38b2ac; /* teal-400 */
+  padding: 12px;
+  border: 1px solid #38b2ac; /* Match border color for consistency */
+  border-radius: 6px;
+  color: #234e52; /* teal-900 */
+}
+
+.todaySection li.notAssignedToMe {
+  background-color: #f7fafc; /* gray-50 */
+  border-left: 4px solid #a0aec0; /* gray-400 */
+  padding: 12px;
+  border: 1px solid #a0aec0; /* Match border color */
+  border-radius: 6px;
+  color: #2d3748; /* gray-800 */
+}
+
+.todaySection li.isCreatedByMe {
+  background-color: #fefcbf; /* yellow-50 */
+  border-left: 4px solid #ecc94b; /* yellow-400 */
+  padding: 12px;
+  border: 1px solid #ecc94b; /* Match border color */
+  border-radius: 6px;
+  color: #744210; /* yellow-900 */
+}
+
+.todaySection li.isNotCreatedByMe {
+  background-color: #f4f4f5; /* zinc-50 */
+  border-left: 4px solid #71717a; /* zinc-500 */
+  padding: 12px;
+  border: 1px solid #71717a; /* Match border color */
+  border-radius: 6px;
+  color: #27272a; /* zinc-800 */
+}
+
+.todaySection:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.todaySection h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #333333;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 0.5rem;
+}
+
+.todaySection ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.todaySection li {
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  background-color: #f9f9f9;
+  transition: background-color 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.todaySection li:hover {
+  background-color: #f1f1f1;
+}
+
+.taskTitle {
+  font-weight: 600;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.taskStatus {
+  font-size: 0.875rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.completed {
+  background-color: #c6f6d5; /* green-200 */
+  color: #22543d; /* green-900 */
+}
+
+.pending {
+  background-color: #fed7d7; /* red-200 */
+  color: #742a2a; /* red-900 */
+}
+
+.currentDate {
     color: #000000;
     font-size: 0.9rem;
-  }
-  
-  .statsContainer {
+}
+
+.statsContainer {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
-  }
-  
-  .statCard {
+}
+
+.statCard {
     background-color: #ffffff;
     border-radius: 0;
     padding: 1.2rem;
     border: 2px solid #000000;
     transition: transform 0.2s ease;
-  }
-  
-  .statCard:hover {
+}
+
+.statCard:hover {
     transform: translateY(-5px);
-  }
-  
-  .statCard h3 {
+}
+
+.statCard h3 {
     font-size: 0.9rem;
     color: #000000;
     margin: 0 0 0.5rem 0;
     font-weight: 500;
-  }
-  
-  .statNumber {
+}
+
+.statNumber {
     font-size: 2rem;
     font-weight: 700;
     margin: 0;
     color: #000000;
-  }
-  
-  .chartContainer {
+}
+
+.chartContainer {
     background-color: #ffffff;
     border-radius: 0;
     padding: 1.5rem;
     margin-bottom: 2rem;
     border: 2px solid #000000;
-  }
-  
-  .chartContainer h2 {
+}
+
+.chartContainer h2 {
     font-size: 1.2rem;
     margin-top: 0;
     margin-bottom: 1rem;
     color: #000000;
-  }
-  
-  .chartWrapper {
+}
+
+.chartWrapper {
     height: 300px;
     width: 100%;
-  }
-  
-  .recentActivity {
+}
+
+.recentActivity {
     background-color: #ffffff;
     border-radius: 0;
     padding: 1.5rem;
     border: 2px solid #000000;
-  }
-  
-  .recentActivity h2 {
+}
+
+.recentActivity h2 {
     font-size: 1.2rem;
     margin-top: 0;
     margin-bottom: 1rem;
     color: #000000;
-  }
-  
-  .activityList {
+}
+
+.activityList {
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
-  }
-  
-  .activityItem {
+}
+
+.activityItem {
     display: flex;
     padding: 0.8rem;
     background-color: #ffffff;
     border: 1px solid #000000;
-  }
-  
-  .activityTime {
+}
+
+.activityTime {
     font-size: 0.85rem;
     color: #000000;
     min-width: 80px;
-  }
-  
-  .activityText {
+}
+
+.activityText {
     font-size: 0.9rem;
     color: #000000;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 768px) {
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
     .dashboardContainer {
       padding: 1rem;
     }
@@ -130,9 +239,9 @@
       align-items: flex-start;
       gap: 0.5rem;
     }
-  }
-  
-  @media (max-width: 480px) {
+}
+
+@media (max-width: 480px) {
     .statsContainer {
       grid-template-columns: 1fr;
     }
@@ -141,8 +250,9 @@
       flex-direction: column;
       gap: 0.3rem;
     }
-  }
-  .loading, .error {
+}
+
+.loading, .error {
   padding: 20px;
   text-align: center;
   font-size: 1.2rem;
@@ -168,7 +278,8 @@
 .activityText {
   flex: 1;
 }
- .addButton {
+
+.addButton {
     padding: 12px 24px;
     background-color: #000;
     color: #fff;
@@ -179,11 +290,11 @@
     text-transform: uppercase;
     cursor: pointer;
     transition: all 0.2s ease;
-  }
+}
 
-  .addButton:hover {
+.addButton:hover {
     background-color: #fff;
     color: #000;
     box-shadow: 4px 4px 0 #000;
     transform: translate(-2px, -2px);
-  }
+}

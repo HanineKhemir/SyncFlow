@@ -64,8 +64,14 @@
   transition: background-color 0.2s ease;
 }
 
-.addEventButton:hover {
+.addEventButton:hover:not(:disabled) {
   background-color: #333333;
+}
+
+.addEventButton:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .customCalendarWrapper {
@@ -80,18 +86,30 @@
 .customCalendarWrapper :global(.rbc-header) {
   background-color: #000000;
   color: #ffffff;
-  padding: 8px;
   font-weight: 500;
+  font-size: 1.1rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0; /* override internal padding */
+  margin: 0;
+  width: 100%;
 }
+
+
 
 .customCalendarWrapper :global(.rbc-month-view) {
   border: 1px solid #000000;
 }
 
 .customCalendarWrapper :global(.rbc-day-bg) {
-  border-right: 1px solid #000000;
-  border-bottom: 1px solid #000000;
+  border-left: 2px solid transparent;
+  border-right: 2px solid transparent;
+  box-sizing: border-box;
 }
+
 
 .customCalendarWrapper :global(.rbc-off-range-bg) {
   background-color: #f5f5f5;
@@ -116,14 +134,27 @@
 .customCalendarWrapper :global(.rbc-btn-group) {
   margin-bottom: 10px;
 }
-
 .customCalendarWrapper :global(.rbc-event) {
-  background-color: transparent !important;
+  font-size: 0.85rem;
+  padding: 2px 6px;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #000000 !important;
+  border-radius: 4px;
 }
 
-.customCalendarWrapper :global(.rbc-today) {
-  background-color: #f0f0f0;
+.customCalendarWrapper :global(.rbc-time-view .rbc-today),
+.customCalendarWrapper :global(.rbc-month-view .rbc-today) {
+  background-color: #eef2ff !important;
+  border-left-color: #4f46e5 !important;
+  border-right-color: #4f46e5 !important;
 }
+
+.customCalendarWrapper :global(.rbc-header.rbc-today) {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
 
 /* Upcoming events styling */
 .eventsList {
@@ -138,7 +169,7 @@
   border: 1px solid #000000;
   padding: 1rem;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
 .eventCard:hover {
@@ -179,14 +210,18 @@
   padding: 1rem;
   text-align: center;
   color: #666666;
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  font-style: italic;
 }
 
 .error {
   padding: 1rem;
   text-align: center;
-  color: #ff0000;
+  color: #cc0000;
   background-color: #ffe6e6;
-  border: 1px solid #ff0000;
+  border: 1px solid #ff9999;
+  border-radius: 4px;
 }
 
 /* Event details modal */
@@ -306,7 +341,7 @@
   padding: 0.75rem 1.5rem;
   cursor: pointer;
   font-weight: 500;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
 }
 
 .saveButton:hover:not(:disabled) {
@@ -316,6 +351,7 @@
 .saveButton:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .cancelButton {
@@ -325,11 +361,16 @@
   padding: 0.75rem 1.5rem;
   cursor: pointer;
   font-weight: 500;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
 }
 
-.cancelButton:hover {
+.cancelButton:hover:not(:disabled) {
   background-color: #f0f0f0;
+}
+
+.cancelButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Responsive adjustments */

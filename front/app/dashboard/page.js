@@ -7,7 +7,6 @@ import styles from './Dashboard.module.css';
 import { useAuth } from '../hooks/useAuth';
 import { GET_USERS_BY_COMPANY } from '../graphql/user';
 import { useRouter } from "next/navigation"; 
-
 const GET_TASK_STATS = gql`
   query GetTaskStats($companyId: ID!) {
     tasksByCompany(companyId: $companyId) {
@@ -33,7 +32,33 @@ const CREATE_TASK_MUTATION = gql`
       description
       dueDate
       completed
-      assignedTo {
+    }
+  }
+`;
+const GET_TODAYS_TASKS = gql`
+  query Tasksbyday($date: String!) {
+    tasksbyday(date: $date) {
+      id
+      title
+      description
+      dueDate
+      completed
+      assignedTo{
+        id
+        username
+      }
+    }
+  }
+`;
+
+const GET_TODAYS_EVENTS = gql`
+  query EventByDay($date: String!) {
+    EventByDay(date: $date) {
+      id
+      title
+      description
+      date
+      createdBy {
         id
         username
       }
@@ -202,7 +227,7 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, users, loading: usersLoading 
                 backgroundColor: '#ffffff'
               }}
             >
-              <option value="">Select a user (optional)</option>
+              <option disabled value="">Select a user</option>
               {usersLoading ? (
                 <option disabled>Loading users...</option>
               ) : (
@@ -254,6 +279,7 @@ const AddTaskModal = ({ isOpen, onClose, onSubmit, users, loading: usersLoading 
 
 export default function Dashboard() {
   const { token, isLoading: authLoading, user,isManager } = useAuth();
+  console.log("theisuer", user)
   const router = useRouter();
   const [taskData, setTaskData] = useState([]);
   const [stats, setStats] = useState({
@@ -267,6 +293,27 @@ export default function Dashboard() {
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const STORAGE_KEY = 'dashboard_recent_activities';
   
+  const todayISOString = new Date().toISOString().split('T')[0] + "T00:00:00.000Z";
+
+
+const { data: todayEventsData } = useQuery(GET_TODAYS_EVENTS, {
+  variables: { date: todayISOString },
+  skip: !token,
+  context: {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : '',
+    },
+  },
+});
+const { data: todayTasksData } = useQuery(GET_TODAYS_TASKS, {
+  variables: { date: todayISOString },
+  skip: !token,
+  context: {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : '',
+    },
+  },
+});
   const { loading: queryLoading, error, data, refetch } = useQuery(GET_TASK_STATS, {
     variables: { companyId: user?.company?.id?.toString() },
     skip: !token,
@@ -326,58 +373,6 @@ export default function Dashboard() {
   const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [activitiesError, setActivitiesError] = useState(null);
 
-  const fetchRecentActivities = async () => {
-    if (!token) return;
-
-    setActivitiesLoading(true);
-    setActivitiesError(null);
-
-    try {
-      const response = await fetch('http://localhost:3000/history/events?limit=10', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const historyData = await response.json();
-
-      const taskEvents = historyData
-        .filter(event => event.targettype === 'task')
-        .slice(0, 5)
-        .map((event, index) => ({
-          id: event.id || `activity-${index}-${event.date}`,
-          time: new Date(event.date).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-          }),
-          text: formatActivityMessage(event),
-          type: event.type,
-          taskId: event.target,
-          userName: event.performedBy?.username,
-          date: event.date
-        }))
-        .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-      // Remove duplicates based on ID
-      const uniqueActivities = taskEvents.filter((activity, index, self) => 
-        index === self.findIndex(a => a.id === activity.id)
-      );
-
-      setRecentActivities(uniqueActivities);
-    } catch (error) {
-      console.error('Error fetching recent activities:', error);
-      setActivitiesError(error);
-    } finally {
-      setActivitiesLoading(false);
-    }
-  };
-
   const handleCreateTask = async (taskData) => {
     try {
       await createTaskMutation({
@@ -389,92 +384,6 @@ export default function Dashboard() {
       console.error('Error in handleCreateTask:', error);
     }
   };
-
-
-  // SSE Setup with Authentication 
-  useEffect(() => {
-    if (!token) return;
-    
-    const setupSSE = () => {
-        const eventSource = new EventSource(`http://localhost:3000/history/events?authorization=${token}`, {
-            withCredentials: true,
-        });
-
-        eventSource.onmessage = (event) => {
-            try {
-                const eventData = JSON.parse(event.data);
-                
-                if (eventData.targettype === 'task') {
-                    console.log('Received task event:', eventData);
-
-                    const newActivity = {
-                        id: eventData.id || `sse-${Date.now()}-${Math.random()}`,
-                        time: new Date(eventData.date).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                        }),
-                        text: formatActivityMessage(eventData),
-                        type: eventData.type,
-                        taskId: eventData.target,
-                        userName: eventData.performedBy?.username
-                    };
-
-                    setRecentActivities(prev => {
-                        // Remove duplicates and limit to 5 items
-                        const withoutDupes = prev.filter(activity => activity.id !== newActivity.id);
-                        const updated = [newActivity, ...withoutDupes].slice(0, 5);
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-                        return updated;
-                    });
-
-                    refetch();
-                    fetchRecentActivities();
-                    setLastRefresh(Date.now());
-                }
-            } catch (error) {
-                console.error('Error parsing SSE data:', error);
-            }
-        };
-
-        eventSource.onerror = (error) => {
-            console.error('SSE connection error:', error);
-            eventSource.close();
-
-            // Retry connection after 5 seconds
-            setTimeout(setupSSE, 5000);
-        };
-
-        return eventSource;
-    };
-
-    const eventSource = setupSSE();
-    
-    return () => {
-        if (eventSource) {
-            eventSource.close();
-        }
-    };
-}, [token, refetch]);
-
-  useEffect(() => {
-    const storedActivities = localStorage.getItem(STORAGE_KEY);
-    if (storedActivities) {
-      try {
-        const parsed = JSON.parse(storedActivities);
-        // Ensure unique activities when loading from storage
-        const uniqueActivities = parsed.filter((activity, index, self) => 
-          index === self.findIndex(a => a.id === activity.id)
-        );
-        setRecentActivities(uniqueActivities);
-      } catch (error) {
-        console.error('Error parsing stored activities:', error);
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
-    fetchRecentActivities();
-  }, [token]);
-
   useEffect(() => {
     if (data?.tasksByCompany) {
       const today = new Date();
@@ -641,31 +550,69 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className={styles.recentActivity}>
-        <h2>Recent Activity</h2>
-        {activitiesLoading && recentActivities.length === 0 ? (
-          <div className={styles.loading}>Loading recent activities...</div>
-        ) : activitiesError ? (
-          <div className={styles.error}>Error loading activities: {activitiesError.message}</div>
-        ) : (
-          <div className={styles.activityList}>
-            {recentActivities.length > 0 ? (
-              recentActivities.map((activity) => (
-                <div key={`activity-${activity.id}`} className={styles.activityItem}>
-                  <span className={styles.activityTime}>{activity.time}</span>
-                  <span className={styles.activityText}>
-                    {activity.text}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div className={styles.activityItem}>
-                <span className={styles.activityText}>No recent activities</span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      <div className={styles.todaySection}>
+  <h2>Today's Tasks</h2>
+  {todayTasksData?.tasksbyday?.length > 0 ? (
+    <ul>
+      {todayTasksData.tasksbyday.map(task => {
+        const isAssignedToMe = task.assignedTo && user && task.assignedTo.id == user.id;
+        return (
+          <li
+            key={task.id}
+            className={
+              isAssignedToMe
+                ? styles.assignedToMe
+                : styles.notAssignedToMe
+            }
+          >
+            <span className={styles.taskTitle}>{task.title} {(isAssignedToMe || task.completed) ? '': '(' + task.assignedTo.username + ')' }</span>
+            <span
+              className={`${styles.taskStatus} ${
+                task.completed ? styles.completed : styles.pending
+              }`}
+            >
+              {task.completed ? 'Completed' : 'Pending'}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  ) : (
+    <p>No tasks due today.</p>
+  )}
+
+  <h2 style={{ marginTop: '2rem' }}>Today's Events</h2>
+  {console.log('Today Events Data:', todayEventsData)}
+  {todayEventsData?.EventByDay?.length > 0 ? (
+    <ul>
+      {todayEventsData.EventByDay.map(event => {
+        const isCreatedByMe = event.createdBy && user && event.createdBy.id == user.id;
+        console.log('Event:', event, 'isCreatedByMe:', isCreatedByMe);
+        return (
+          <li
+            key={event.id}
+            className={
+              isCreatedByMe
+                ? styles.assignedToMe
+                : styles.notAssignedToMe
+            }
+          >
+            <span className={styles.taskTitle}>{event.title} {isCreatedByMe? '' : '(' + event.createdBy.username+ ')'}</span>
+            <span className={styles.taskStatus}>
+              {new Date(event.date).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+              })}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  ) : (
+    <p>No events today.</p>
+  )}
+</div>
 
       {/* Add Task Modal */}
       <AddTaskModal

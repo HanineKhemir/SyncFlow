@@ -1,9 +1,18 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '@/app/hooks/useAuth';
 import styles from './notes.module.css';
+
+// Debounce utility to limit how often a function is called
+const debounce = (func, wait) => {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
 
 const CollaborativeNotes = () => {
     const { token, user } = useAuth();
@@ -11,10 +20,47 @@ const CollaborativeNotes = () => {
     const [noteLines, setNoteLines] = useState([]);
     const [softLocks, setSoftLocks] = useState(new Map());
     const [currentLock, setCurrentLock] = useState(null);
+    const [selectedLine, setSelectedLine] = useState(null);
     const [socket, setSocket] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState('');
     const textareaRefs = useRef({});
+    const styleMenuRef = useRef(null);
+    const pendingSaves = useRef({}); // Track pending save promises
+
+    // Get the currently selected line data for the style menu
+    const getSelectedLineData = () => {
+        if (!selectedLine) return null;
+        return noteLines.find(line => line.lineNumber === selectedLine);
+    };
+
+    const selectedLineData = getSelectedLineData();
+
+    // Debounced save function
+    const debouncedSave = useCallback(
+        debounce((lineNumber, content, additionalData = {}, onSuccess) => {
+            if (!socket || !isConnected) return;
+
+            const updateData = {
+                noteId: noteId,
+                lineNumber: lineNumber,
+                content: content,
+                ...additionalData
+            };
+
+            const savePromise = new Promise((resolve) => {
+                socket.emit('alterNote', updateData, (response) => {
+                    if (response.success && onSuccess) {
+                        onSuccess();
+                    }
+                    resolve();
+                });
+            });
+
+            pendingSaves.current[lineNumber] = savePromise;
+        }, 500),
+        [socket, isConnected, noteId]
+    );
 
     // Fetch noteId first
     useEffect(() => {
@@ -30,13 +76,10 @@ const CollaborativeNotes = () => {
                         'Authorization': `Bearer ${token}`
                     }
                 });
-                console.log('Fetch response:', res);
                 if (!res.ok) {
                     throw new Error(`Error fetching noteId: ${res.status} ${res.statusText}`);
                 }
-                console.log('Response status:', res);
                 const data = await res.json();
-                console.log('Received noteId:', data.id);
                 setNoteId(data.id);
             } catch (err) {
                 console.error('Error fetching noteId:', err);
@@ -95,7 +138,6 @@ const CollaborativeNotes = () => {
                     return;
                 }
 
-                console.log('Fetched NoteLines:', json.data.NoteLines);
                 setNoteLines(json.data.NoteLines || []);
             } catch (err) {
                 console.error('Error fetching note lines:', err);
@@ -106,7 +148,33 @@ const CollaborativeNotes = () => {
         fetchNoteLines();
     }, [noteId, token]);
 
+    // Handle global click events for unlocking
+    useEffect(() => {
+        const handleClickOutside = async (event) => {
+            if (!currentLock || !socket || !isConnected) return;
 
+            const isStyleMenuClick = styleMenuRef.current && styleMenuRef.current.contains(event.target);
+            const isTextareaClick = Object.values(textareaRefs.current).some(ref => ref && ref.contains(event.target));
+
+            if (!isStyleMenuClick && !isTextareaClick) {
+                // Wait for any pending save to complete
+                if (pendingSaves.current[currentLock.lineNumber]) {
+                    await pendingSaves.current[currentLock.lineNumber];
+                    delete pendingSaves.current[currentLock.lineNumber];
+                }
+
+                socket.emit('softunlock', {
+                    noteId: noteId,
+                    lineNumber: currentLock.lineNumber
+                });
+                setCurrentLock(null);
+                setSelectedLine(null);
+            }
+        };
+
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [currentLock, socket, isConnected, noteId]);
 
     useEffect(() => {
         if (!token || !user || !noteId) return;
@@ -173,9 +241,8 @@ const CollaborativeNotes = () => {
                 });
             }
         });
-        newSocket.on('newPageCreated', (data) => {
-            console.log('Received newPageCreated:', data);
 
+        newSocket.on('newPageCreated', (data) => {
             const isSameNote = data.noteId == noteId;
             if (!isSameNote) return;
 
@@ -183,7 +250,6 @@ const CollaborativeNotes = () => {
                 Array.isArray(data.newLines?.newLines) ? data.newLines.newLines : [];
 
             if (linesArray.length === 0) {
-                console.log('No lines to add');
                 return;
             }
 
@@ -195,8 +261,6 @@ const CollaborativeNotes = () => {
                 color: line.color ?? '#000000',
                 highlighted: line.highlighted ?? false,
             }));
-
-            console.log('New lines being added:', preparedLines);
 
             setNoteLines(prev =>
                 [...prev, ...preparedLines].sort((a, b) => a.lineNumber - b.lineNumber)
@@ -215,29 +279,23 @@ const CollaborativeNotes = () => {
         };
     }, [token, user, noteId]);
 
-    // Lock, edit, save handlers and UI rendering here — unchanged, same as your original code
-
     const handleLineFocus = (lineNumber) => {
         if (!socket || !isConnected) return;
         if (currentLock && currentLock.lineNumber === lineNumber) return;
-
+        
+        setSelectedLine(lineNumber);
+        
         socket.emit('softlock', {
             noteId: noteId,
             lineNumber: lineNumber
         });
 
         setCurrentLock({ noteId, lineNumber });
-    };
 
-    const handleLineBlur = (lineNumber) => {
-        if (!socket || !isConnected) return;
-
-        if (currentLock && currentLock.lineNumber === lineNumber) {
-            socket.emit('softunlock', {
-                noteId: noteId,
-                lineNumber: lineNumber
-            });
-            setCurrentLock(null);
+        // Focus the textarea
+        const textarea = textareaRefs.current[lineNumber];
+        if (textarea) {
+            textarea.focus();
         }
     };
 
@@ -249,48 +307,30 @@ const CollaborativeNotes = () => {
                     : line
             )
         );
+
+        // Trigger debounced save
+        debouncedSave(lineNumber, newContent);
     };
 
-    const handleContentSave = (lineNumber, content, additionalData = {}, onSuccess) => {
-        if (!socket || !isConnected) return;
-
+    const handleStyleChange = (styleProperty, value) => {
+        if (!selectedLine || !selectedLineData) return;
+        
         const updateData = {
             noteId: noteId,
-            lineNumber: lineNumber,
-            content: content,
-            ...additionalData
+            lineNumber: selectedLine,
+            content: selectedLineData.content,
+            [styleProperty]: value
         };
 
-        socket.emit('alterNote', updateData, (response) => {
-            if (response.success && onSuccess) {
-                onSuccess();
-            }
-        });
-    };
+        setNoteLines(prev =>
+            prev.map(l =>
+                l.lineNumber === selectedLine
+                    ? { ...l, [styleProperty]: value }
+                    : l
+            )
+        );
 
-    const handleStyleChange = (lineNumber, styleProperty, value) => {
-        console.log(`Changing style for line ${lineNumber}: ${styleProperty} = ${value}`);
-        const line = noteLines.find(l => l.lineNumber === lineNumber);
-        if (line) {
-            const updateData = {
-                noteId: noteId,
-                lineNumber: lineNumber,
-                content: line.content,
-                [styleProperty]: value
-            };
-            console.log('Emitting alterNote with data:', updateData);
-
-            setNoteLines(prev =>
-                prev.map(l =>
-                    l.lineNumber === lineNumber
-                        ? { ...l, [styleProperty]: value }
-                        : l
-                )
-            );
-            console.log('Updated noteLines state:', noteLines);
-
-            socket.emit('alterNote', updateData);
-        }
+        socket.emit('alterNote', updateData);
     };
 
     const getLineLockStatus = (lineNumber) => {
@@ -318,6 +358,53 @@ const CollaborativeNotes = () => {
                 <div className={`${styles.connectionStatus} ${isConnected ? styles.connected : styles.disconnected}`}>
                     {isConnected ? 'Connected' : 'Disconnected'}
                 </div>
+                <div ref={styleMenuRef} className={`${styles.styleMenu} ${!selectedLineData ? styles.disabled : ''}`}>
+                    <div className={styles.menuLabel}>
+                        {selectedLineData 
+                            ? `Editing Line ${selectedLine}` 
+                            : 'Select a line to edit styling'
+                        }
+                    </div>
+
+                    <div className={styles.menuControl}>
+                        <label>Size</label>
+                        <input
+                            type="number"
+                            min="8"
+                            max="72"
+                            value={selectedLineData?.fontSize || 14}
+                            onChange={(e) => handleStyleChange('fontSize', parseInt(e.target.value))}
+                            className={styles.menuInput}
+                            disabled={!selectedLineData}
+                            style={{ width: '70px' }}
+                        />
+                    </div>
+
+                    <div className={styles.menuControl}>
+                        <label>Color</label>
+                        <input
+                            type="color"
+                            value={selectedLineData?.color || '#000000'}
+                            onChange={(e) => handleStyleChange('color', e.target.value)}
+                            className={styles.colorInput}
+                            disabled={!selectedLineData}
+                        />
+                    </div>
+
+                    <div 
+                        className={`${styles.highlightToggle} ${selectedLineData?.highlighted ? styles.active : ''}`}
+                        onClick={() => selectedLineData && handleStyleChange('highlighted', !selectedLineData.highlighted)}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={selectedLineData?.highlighted || false}
+                            onChange={() => {}}
+                            className={styles.checkbox}
+                            disabled={!selectedLineData}
+                        />
+                        <span>Highlight</span>
+                    </div>
+                </div>
             </div>
 
             {error && (
@@ -330,14 +417,17 @@ const CollaborativeNotes = () => {
                 {noteLines.map((line) => {
                     const lockStatus = getLineLockStatus(line.lineNumber);
                     const isHighlighted = line.highlighted;
+                    const isSelected = selectedLine === line.lineNumber;
 
                     return (
                         <div
                             key={line.id}
-                            className={`${styles.noteLine} ${lockStatus.isLocked && !lockStatus.isLockedByMe ? styles.lockedLine : ''
-                                } ${lockStatus.isLockedByMe ? styles.myLockedLine : ''
-                                } ${isHighlighted ? styles.highlighted : ''
-                                }`}
+                            className={`${styles.noteLine} 
+                                ${lockStatus.isLocked && !lockStatus.isLockedByMe ? styles.lockedLine : ''} 
+                                ${isSelected ? styles.selected : ''} 
+                                ${isHighlighted ? styles.highlighted : ''}
+                            `}
+                            onClick={() => !lockStatus.isLocked && handleLineFocus(line.lineNumber)}
                         >
                             <div className={styles.lineNumber}>
                                 {line.lineNumber}
@@ -356,18 +446,7 @@ const CollaborativeNotes = () => {
                                     placeholder={lockStatus.isLocked && !lockStatus.isLockedByMe
                                         ? `Locked by ${lockStatus.lockedBy}`
                                         : 'Enter text...'}
-                                    onFocus={() => handleLineFocus(line.lineNumber)}
-                                    onBlur={() => {
-                                        handleContentSave(line.lineNumber, line.content, {}, () => {
-                                            handleLineBlur(line.lineNumber);
-                                        });
-                                    }}
                                     onChange={(e) => handleContentChange(line.lineNumber, e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.ctrlKey) {
-                                            e.target.blur();
-                                        }
-                                    }}
                                 />
 
                                 {lockStatus.isLocked && (
@@ -378,45 +457,6 @@ const CollaborativeNotes = () => {
                                     </div>
                                 )}
                             </div>
-
-                            <div className={styles.controls}>
-                                <div className={styles.controlGroup}>
-                                    <label>Size:</label>
-                                    <input
-                                        type="number"
-                                        min="8"
-                                        max="72"
-                                        value={line.fontSize}
-                                        onChange={(e) => handleStyleChange(line.lineNumber, 'fontSize', parseInt(e.target.value))}
-                                        className={styles.smallInput}
-                                        disabled={!lockStatus.canEdit}
-                                    />
-                                </div>
-
-                                <div className={styles.controlGroup}>
-                                    <label>Color:</label>
-                                    <input
-                                        type="color"
-                                        value={line.color || '#ffffff'}
-                                        onClick={(e) => e.stopPropagation()}
-                                        onChange={e =>
-                                            handleStyleChange(line.lineNumber, 'color', e.target.value)
-                                        }
-                                    />
-
-                                </div>
-
-                                <div className={styles.controlGroup}>
-                                    <input
-                                        type="checkbox"
-                                        checked={line.highlighted}
-                                        onChange={(e) => handleStyleChange(line.lineNumber, 'highlighted', e.target.checked)}
-                                        className={styles.checkbox}
-                                        disabled={!lockStatus.canEdit}
-                                    />
-                                    <label>Highlight</label>
-                                </div>
-                            </div>
                         </div>
                     );
                 })}
@@ -425,15 +465,16 @@ const CollaborativeNotes = () => {
             <div className={styles.tips}>
                 <p>Tips:</p>
                 <ul>
-                    <li>Click on a line to start editing (soft lock)</li>
-                    <li>Press Ctrl+Enter to save and move to next line</li>
-                    <li>Lines automatically extend when you approach the end</li>
-                    <li>Red border = locked by another user</li>
-                    <li>Green border = locked by you</li>
+                    <li>Click anywhere on a line to edit it</li>
+                    <li>Use the style menu to change size, color, and highlighting</li>
+                    <li>Changes are saved automatically after a brief pause</li>
+                    <li>Click outside the current line and style menu to unlock</li>
+                    <li>Red background = locked by another user</li>
+                    <li>Green background = currently selected by you</li>
                 </ul>
             </div>
         </div>
     );
 };
 
-export default CollaborativeNotes;
+export default CollaborativeNotes;  

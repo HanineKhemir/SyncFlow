@@ -1,0 +1,35 @@
+<svg viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7C3AED;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main icon container -->
+  <g transform="translate(10, 10)">
+    <!-- Whiteboard element -->
+    <rect x="0" y="8" width="20" height="14" rx="2" fill="none" stroke="url(#flowGradient)" stroke-width="2"/>
+    <path d="M4 12 L8 16 L16 12" fill="none" stroke="url(#flowGradient)" stroke-width="1.5" stroke-linecap="round"/>
+    
+    <!-- Chat bubble -->
+    <circle cx="28" cy="12" r="8" fill="url(#flowGradient)" opacity="0.8"/>
+    <circle cx="26" cy="10" r="1" fill="white"/>
+    <circle cx="28" cy="10" r="1" fill="white"/>
+    <circle cx="30" cy="10" r="1" fill="white"/>
+    
+    <!-- Task checkmark -->
+    <rect x="0" y="26" width="16" height="16" rx="3" fill="none" stroke="url(#flowGradient)" stroke-width="2"/>
+    <path d="M4 34 L7 37 L12 30" fill="none" stroke="url(#flowGradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Connecting flow lines -->
+    <path d="M20 15 Q24 15 24 12" fill="none" stroke="url(#flowGradient)" stroke-width="1.5" opacity="0.6"/>
+    <path d="M8 22 Q8 24 8 26" fill="none" stroke="url(#flowGradient)" stroke-width="1.5" opacity="0.6"/>
+    <path d="M28 20 Q24 24 16 30" fill="none" stroke="url(#flowGradient)" stroke-width="1.5" opacity="0.6"/>
+  </g>
+  
+  <!-- Text logo -->
+  <text x="55" y="25" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#1F2937">Sync</text>
+  <text x="55" y="42" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="url(#flowGradient)">Flow</text>
+</svg>

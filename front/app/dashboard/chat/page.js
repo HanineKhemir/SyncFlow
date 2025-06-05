@@ -22,7 +22,7 @@ export default function ChatPage() {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  // Initialize socket connection
+
   useEffect(() => {
     if (!token || !user) return;
 
@@ -235,9 +235,17 @@ export default function ChatPage() {
   };
 
   // Auto-scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  const scrollToBottom = () => {
+  const messagesContainer = document.querySelector(`.${styles.messagesContainer}`);
+  if (messagesContainer) {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+};
+
+// Call this instead when messages update
+useEffect(() => {
+  scrollToBottom();
+}, [messages]);
 
   // Load chats on mount
   useEffect(() => {

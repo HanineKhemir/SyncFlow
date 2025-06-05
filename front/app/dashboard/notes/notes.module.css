@@ -1,7 +1,9 @@
+/* notes.module.css (updated to increase textarea width) */
+
 .container {
-  padding: 24px;
+  padding: 3.2vh;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-  background: white;
+  background: #fafafa;
   min-height: 100vh;
 }
 
@@ -9,39 +11,47 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
-  padding: 20px 24px;
-  background: white;
-  border: 2px solid black;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 3.2vh;
+  padding: 2.4vh 0;
+  border-bottom: 0.1vh solid #e0e0e0;
+  flex-wrap: wrap;
+  gap: 1.6vh;
 }
 
 .header h2 {
   margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: black;
+  font-size: 2.8vh;
+  font-weight: 300;
+  color: #333;
+  letter-spacing: -0.05vh;
 }
 
 .connectionStatus {
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 0.6vh 1.6vh;
+  border-radius: 2vh;
+  font-size: 1.1vh;
+  font-weight: 500;
   color: white;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.1vh;
   display: flex;
   align-items: center;
-  gap: 6px;
-  transition: all 0.3s ease;
+  gap: 0.8vh;
+  transition: all 0.4s ease;
+}
+
+.connectionStatus.connected {
+  background: #10b981;
+}
+
+.connectionStatus.disconnected {
+  background: #ef4444;
 }
 
 .connectionStatus::before {
   content: '';
-  width: 8px;
-  height: 8px;
+  width: 0.6vh;
+  height: 0.6vh;
   border-radius: 50%;
   background: currentColor;
   animation: pulse 2s infinite;
@@ -52,267 +62,310 @@
   50% { opacity: 0.5; }
 }
 
-.connected {
-  background: linear-gradient(135deg, #4CAF50, #45a049);
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+.styleMenu {
+  display: flex;
+  align-items: center;
+  gap: 3.2vh;
+  padding: 2vh 2.4vh;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(1vh);
+  border-radius: 2vh;
+  transition: all 0.4s ease;
+  flex-grow: 1;
 }
 
-.disconnected {
-  background: linear-gradient(135deg, #f44336, #d32f2f);
-  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+.styleMenu.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.menuLabel {
+  font-size: 1.5vh;
+  font-weight: 400;
+  color: #666;
+  min-width: 14vh;
+  letter-spacing: -0.02vh;
+}
+
+.menuControl {
+  display: flex;
+  align-items: center;
+  gap: 0.8vh;
+}
+
+.menuControl label {
+  font-size: 1.1vh;
+  font-weight: 500;
+  color: #888;
+  min-width: 4vh;
+  text-transform: uppercase;
+  letter-spacing: 0.1vh;
+}
+
+.menuInput {
+  padding: 0.8vh 1.2vh;
+  font-size: 1.4vh;
+  border: none;
+  border-radius: 1.2vh;
+  background: rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  font-weight: 400;
+}
+
+.menuInput:focus {
+  outline: none;
+  background: rgba(0, 0, 0, 0.08);
+  transform: scale(1.02);
+}
+
+.colorInput {
+  width: 3.6vh;
+  height: 3.6vh;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.colorInput:hover {
+  transform: scale(1.1);
+}
+
+.colorInput:focus {
+  outline: none;
+  transform: scale(1.1);
+}
+
+.highlightToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.8vh;
+  padding: 0.8vh 1.6vh;
+  border: none;
+  border-radius: 1.6vh;
+  background: rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.1vh;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1vh;
+  color: #666;
+}
+
+.highlightToggle:hover {
+  background: rgba(0, 0, 0, 0.08);
+  transform: scale(1.02);
+}
+
+.highlightToggle.active {
+  background: rgba(255, 193, 7, 0.2);
+  color: #f57f17;
+}
+
+.checkbox {
+  width: 1.6vh;
+  height: 1.6vh;
+  accent-color: black;
 }
 
 .error {
-  background: linear-gradient(135deg, #ff9800, #f57c00);
+  background: linear-gradient(135deg, #f59e0b, #d97706);
   color: white;
-  padding: 16px 20px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
-  border-left: 4px solid #f57c00;
-  font-weight: 500;
+  padding: 1.6vh 2.4vh;
+  border-radius: 1.6vh;
+  margin-bottom: 2.4vh;
+  font-weight: 400;
 }
 
 .noteLines {
-  background: white;
-  border: 2px solid black;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  background: transparent;
 }
 
 .noteLine {
   display: flex;
   align-items: flex-start;
-  border-bottom: 1px solid black;
-  padding: 16px 20px;
-  transition: all 0.3s ease;
+  padding: 0.8vh 0;
+  transition: all 0.4s ease;
   position: relative;
+  cursor: pointer;
+  border-radius: 1.2vh;
+  margin-bottom: 0.2vh;
 }
 
 .noteLine:hover {
-  background: #f5f5f5;
+  background: rgba(0, 0, 0, 0.02);
+  transform: translateX(0.4vh);
 }
 
-.noteLine:last-child {
-  border-bottom: none;
+.noteLine.selected {
+  background: rgba(16, 185, 129, 0.08);
+  transform: translateX(0.8vh);
 }
 
 .lockedLine {
-  background: linear-gradient(135deg, rgba(244, 67, 54, 0.1), rgba(244, 67, 54, 0.05));
-  border-left: 4px solid #f44336;
-  transform: translateX(2px);
-  box-shadow: inset 0 0 0 1px rgba(244, 67, 54, 0.2);
-}
-
-.myLockedLine {
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
-  border-left: 4px solid #4CAF50;
-  transform: translateX(2px);
-  box-shadow: inset 0 0 0 1px rgba(76, 175, 80, 0.2);
+  background: rgba(239, 68, 68, 0.08);
+  transform: translateX(0.8vh);
 }
 
 .highlighted {
-  background: linear-gradient(135deg, rgba(255, 235, 59, 0.3), rgba(255, 235, 59, 0.1));
-  box-shadow: inset 0 0 0 1px rgba(255, 235, 59, 0.5);
+  background: rgba(255, 193, 7, 0.15);
 }
 
 .lineNumber {
-  width: 50px;
+  width: 4.8vh;
   text-align: center;
-  margin-right: 16px;
-  color: #9E9E9E;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 8px 0;
-  background: rgba(158, 158, 158, 0.1);
-  border-radius: 8px;
-  min-height: 20px;
+  margin-right: 2vh;
+  color: #bbb;
+  font-size: 1.1vh;
+  font-weight: 500;
+  padding: 0.4vh 0;
+  background: transparent;
+  border-radius: 1.2vh;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.noteLine:hover .lineNumber {
+  color: #888;
 }
 
 .lineContent {
   flex: 1;
-  margin-right: 16px;
 }
 
 .textarea {
   width: 100%;
-  min-height: 44px;
-  border: 1px solid black;
-  border-radius: 10px;
-  padding: 12px 16px;
+  max-width: 140vh; /* Increased from 100vh to make textarea wider */
+  min-height: 2.8vh;
+  padding: 0.6vh 1.2vh;
+  border: none;
+  border-radius: 1vh;
   resize: vertical;
   font-family: inherit;
-  font-size: 16px;
-  line-height: 1.5;
-  background: white;
+  font-size: 1.5vh;
+  line-height: 1.4;
+  background: transparent;
   transition: all 0.3s ease;
+  font-weight: 300;
 }
 
 .textarea:focus {
   outline: none;
-  border-color: #333;
-  background: white;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(0.8vh);
+  transform: scale(1.01);
 }
 
 .textarea:disabled {
-  background: rgba(158, 158, 158, 0.1);
-  color: #9E9E9E;
+  background: transparent;
+  color: #aaa;
   cursor: not-allowed;
 }
 
 .textarea::placeholder {
-  color: #BDBDBD;
+  color: #ccc;
   font-style: italic;
+  font-weight: 300;
 }
 
 .lockIndicator {
-  font-size: 11px;
-  color: #757575;
+  font-size: 1vh;
+  color: #999;
   font-style: italic;
-  margin-top: 6px;
-  font-weight: 500;
+  margin-top: 0.8vh;
+  font-weight: 400;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0.6vh;
 }
 
 .lockIndicator::before {
-  content: '🔒';
-  font-size: 10px;
-}
-
-.controls {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-width: 140px;
-  padding: 8px;
-  background: white;
-  border: 1px solid black;
-  border-radius: 12px;
-}
-
-.controlGroup {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #424242;
-}
-
-.controlGroup label {
-  min-width: 35px;
-  font-weight: 600;
-}
-
-.smallInput {
-  width: 65px;
-  padding: 6px 10px;
-  font-size: 12px;
-  border: 1px solid #E0E0E0;
-  border-radius: 6px;
-  background: white;
-  transition: all 0.2s ease;
-}
-
-.smallInput:focus {
-  outline: none;
-  border-color: #333;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
-}
-
-.colorInput {
-  width: 35px;
-  height: 30px;
-  border: 2px solid #E0E0E0;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  overflow: hidden;
-}
-
-.colorInput:hover {
-  border-color: #333;
-  transform: scale(1.05);
-}
-
-.checkbox {
-  width: 16px;
-  height: 16px;
-  accent-color: black;
-  cursor: pointer;
+  content: '✦';
+  font-size: 0.8vh;
 }
 
 .tips {
-  margin-top: 32px;
-  padding: 20px 24px;
-  font-size: 13px;
-  color: #333;
-  background: white;
-  border: 2px solid black;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 4.8vh;
+  padding: 2.4vh 0;
+  font-size: 1.3vh;
+  color: #666;
+  background: transparent;
 }
 
 .tips p {
-  margin: 0 0 12px 0;
-  font-weight: 600;
-  font-size: 14px;
+  margin: 0 0 1.6vh 0;
+  font-weight: 400;
+  font-size: 1.5vh;
+  color: #888;
 }
 
 .tips ul {
-  padding-left: 20px;
+  padding-left: 2vh;
   margin: 0;
-  line-height: 1.6;
+  line-height: 1.8;
 }
 
 .tips li {
-  margin-bottom: 6px;
+  margin-bottom: 0.8vh;
   position: relative;
+  font-weight: 300;
+  color: #999;
 }
 
 .tips li::marker {
-  content: '✨ ';
+  content: '·';
+  color: #ccc;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .container {
-    padding: 16px;
+    padding: 1.6vh;
   }
   
   .header {
     flex-direction: column;
-    gap: 12px;
-    text-align: center;
+    align-items: flex-start;
+    padding: 1.6vh 0;
+    gap: 1.6vh;
+  }
+
+  .connectionStatus {
+    margin-left: 0;
+    font-size: 1.2vh;
+    padding: 0.6vh 1.2vh;
+  }
+  
+  .styleMenu {
+    flex-direction: column;
+    gap: 1.6vh;
+    align-items: flex-start;
+    width: 100%;
+  }
+  
+  .menuControl {
+    width: 100%;
+    justify-content: space-between;
   }
   
   .noteLine {
     flex-direction: column;
-    gap: 12px;
-  }
-  
-  .controls {
-    flex-direction: row;
-    min-width: auto;
-    flex-wrap: wrap;
+    gap: 1.2vh;
   }
   
   .lineNumber {
     width: 100%;
     margin-right: 0;
-    margin-bottom: 8px;
+    margin-bottom: 0.8vh;
   }
 }
 
-/* Dark mode support - now inverted to be light by default */
+/* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .container {
     background: white;
@@ -320,29 +373,29 @@
   
   .header {
     background: white;
-    border: 2px solid black;
+    border-bottom: 0.1vh solid #444;
+  }
+  
+  .styleMenu {
+    background: white;
+    border: 0.2vh solid black;
   }
   
   .noteLines {
     background: white;
-    border: 2px solid black;
   }
   
   .textarea {
+    color: black;
+  }
+  
+  .menuInput {
     background: white;
     color: black;
-    border-color: black;
   }
   
-  .textarea:focus {
+  .highlightToggle {
     background: white;
-  }
-  
-  .controls {
-    background: white;
-  }
-  
-  .controlGroup {
-    color: #424242;
+    color: black;
   }
 }
