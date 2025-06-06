@@ -288,11 +288,15 @@ export default function Dashboard() {
     pendingTasks: 0,
     completionRate: 0
   });
+  const [pageKey, setPageKey] = useState(0);
   const [recentActivities, setRecentActivities] = useState([]);
   const [lastRefresh, setLastRefresh] = useState(Date.now());
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const STORAGE_KEY = 'dashboard_recent_activities';
-  
+  useEffect(() => {
+    // Force re-render when page is visited
+    setPageKey(prev => prev + 1);
+  }, [router.asPath]);
   const todayISOString = new Date().toISOString().split('T')[0] + "T00:00:00.000Z";
 
 
@@ -346,29 +350,12 @@ const { data: todayTasksData } = useQuery(GET_TODAYS_TASKS, {
     },
     onCompleted: () => {
       setIsAddTaskModalOpen(false);
-      refetch();
-      fetchRecentActivities();
     },
     onError: (error) => {
       console.error('Error creating task:', error);
       alert('Error creating task: ' + error.message);
     }
   });
-
-  const formatActivityMessage = (event) => {
-    const actionMap = {
-      'create': 'created',
-      'update': 'updated',
-      'delete': 'deleted',
-      'complete': 'completed'
-    };
-
-    const action = actionMap[event.type] || event.type;
-    const taskTitle = event.targetTitle || 'a task';
-    const username = event.performedBy?.username || 'Someone';
-
-    return `${username} ${action} ${taskTitle}`;
-  };
 
   const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [activitiesError, setActivitiesError] = useState(null);
@@ -469,7 +456,7 @@ const { data: todayTasksData } = useQuery(GET_TODAYS_TASKS, {
   if (error) return <div className={styles.error}>Error loading tasks: {error.message}</div>;
 
   return (
-    <div className={styles.dashboardContainer}>
+    <div key={pageKey} className={styles.dashboardContainer}>
       <header className={styles.dashboardHeader}>
         <h1>Workspace Management Dashboard</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
