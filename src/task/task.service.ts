@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, MoreThan } from 'typeorm';
 import { Task } from './entities/task.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -63,11 +63,11 @@ export class TaskService {
     if (!savedTask) {
       throw new NotFoundException('Failed to create task');
     }
-    
+
     if (isTomorrow(savedTask.dueDate)) {
       this.eventEmitter.emit('task.dueTomorrow', savedTask);
     }
-    
+
     return this.findOne(savedTask.id);
   }
 
@@ -84,17 +84,17 @@ export class TaskService {
       select: TaskSelectOptions,
       relations: ['company', 'assignedTo'],
     });
-    
+
     if (!task) {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
-    
+
     return task;
   }
 
   async update(id: number, updateTaskDto: UpdateTaskDto, user: JwtPayload): Promise<Task> {
     const task = await this.findOne(id);
-    
+
     // Handle user assignment
     let assignedTo: User | undefined = undefined;
     if (updateTaskDto.assignedToId) {
@@ -142,8 +142,21 @@ export class TaskService {
   }
 
   async getTasksByUser(userId: number): Promise<Task[]> {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
     return this.taskRepository.find({
-      where: { assignedTo: { id: userId } },
+      where: [
+      {
+        assignedTo: { id: userId },
+        completed: false,
+      },
+      {
+        assignedTo: { id: userId },
+        dueDate: MoreThan(oneWeekAgo),
+      },
+      
+      ],
       select: TaskSelectOptions,
       relations: ['company', 'assignedTo'],
     });
@@ -156,7 +169,7 @@ export class TaskService {
       relations: ['company', 'assignedTo'],
     });
   }
-  async gettasksbyday(date: string, companyCode : string): Promise<Task[]> {
+  async gettasksbyday(date: string, companyCode: string): Promise<Task[]> {
     const endOfDay = new Date(date);
     endOfDay.setHours(0, 0, 0, 0);
     console.log('End of day:', endOfDay);
@@ -175,6 +188,6 @@ export class TaskService {
       select: TaskSelectOptions,
       relations: ['company', 'assignedTo'],
     });
-    
+
   }
 }
