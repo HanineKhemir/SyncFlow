@@ -17,50 +17,62 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateOperationDto } from 'src/history/dto/create-operation.dto';
 import { Target } from 'src/enum/target.enum';
 import { SharedService } from 'src/services/shared.services';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
+  accessSecret: string;
+  accessExpiresIn: string;
+  refreshSecret: string;
+  refreshExpiresIn: string;
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private jwtService: JwtService,
     @InjectRepository(Operation)
     private eventRepository: Repository<Operation>,
-    private eventEmitter: EventEmitter2
-    ) {}
-async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<User> {
-  const { username, password, role } = createUserDto;
+    private eventEmitter: EventEmitter2,
+    private readonly configService: ConfigService,
 
-  const company = await this.userRepository.manager
-    .getRepository(Company)
-    .findOne({ where: { code: manager.companyCode } });
-  if (!company) {
-    throw new UnauthorizedException('Invalid company code');
+  ) { 
+    this.accessSecret = this.configService.get<string>('JWT_SECRET') || 'yoursecretkey';
+    this.accessExpiresIn = this.configService.get<string>('JWT_EXPIRATION') || '1h';
+    this.refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET')|| 'yourrefreshsecretkey';
+    this.refreshExpiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRATION') || '7d';
   }
-  const existing = await this.userRepository.findOne({ where: { username, company: { id: company.id } } });
-  if (existing) {
-    throw new UnauthorizedException('Username already exists in this company');
-  }
-  const salt = await bcrypt.genSalt();
-  const hashedPassword = await bcrypt.hash(password, salt);
+  async createUser(createUserDto: CreateUserDto, manager: JwtPayload,): Promise<User> {
+    const { username, password, role } = createUserDto;
 
-  const user = this.userRepository.create({
-    username,
-    password: hashedPassword,
-    salt,
-    company,
-    role: role ?? Role.USER,
-  });
+    const company = await this.userRepository.manager
+      .getRepository(Company)
+      .findOne({ where: { code: manager.companyCode } });
+    if (!company) {
+      throw new UnauthorizedException('Invalid company code');
+    }
+    const existing = await this.userRepository.findOne({ where: { username, company: { id: company.id } } });
+    if (existing) {
+      throw new UnauthorizedException('Username already exists in this company');
+    }
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-  const managerUser = await this.userRepository.findOne({ where: { id: manager.sub } });
-  if (!managerUser) {
-    throw new UnauthorizedException('Manager user not found');
-  }
-  const savedUser =  await this.userRepository.save(user);
-  const {company:companylol, ...actdata} = savedUser;
-  actdata.password = '';
-  actdata.salt = '';
-  const op: CreateOperationDto = {
+    const user = this.userRepository.create({
+      username,
+      password: hashedPassword,
+      salt,
+      company,
+      role: role ?? Role.USER,
+    });
+
+    const managerUser = await this.userRepository.findOne({ where: { id: manager.sub } });
+    if (!managerUser) {
+      throw new UnauthorizedException('Manager user not found');
+    }
+    const savedUser = await this.userRepository.save(user);
+    const { company: companylol, ...actdata } = savedUser;
+    actdata.password = '';
+    actdata.salt = '';
+    const op: CreateOperationDto = {
       type: OperationType.CREATE,
       description: JSON.stringify(actdata),
       performedBy: managerUser,
@@ -72,19 +84,56 @@ async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<Use
     const newEvent = this.eventRepository.create(op);
     await this.eventRepository.save(newEvent);
     this.eventEmitter.emit(`event.created.${user.company?.code}`, newEvent);
-  return savedUser;
+    return savedUser;
+  }
+
+  async refresh(refreshToken: string): Promise<{ access_token: string, refresh_token: string }> {
+  try {
+    const lpayload = await this.jwtService.verifyAsync(refreshToken, 
+      {secret : this.refreshSecret,}
+    );
+    console.log('Refresh token payload:', lpayload);
+    const user = await this.userRepository.createQueryBuilder("user")
+    .where("user.id = :id", { id: lpayload.sub })
+    .andWhere("user.companyId = :companyId", { companyId: lpayload.companyId })
+    .getOne();
+
+
+    if (!user) throw new UnauthorizedException('User no longer exists');
+    const payload = {
+      username: lpayload.username,
+      sub: lpayload.sub,
+      role: lpayload.role,
+      companyId: lpayload.companyId,
+      companyCode: lpayload.companyCode
+    }
+
+    const access_token = this.jwtService.sign(payload, {
+      secret: this.accessSecret,
+      expiresIn: this.accessExpiresIn,
+    });
+
+    const refresh_token = this.jwtService.sign(payload, {
+      secret: this.refreshSecret,
+      expiresIn: this.refreshExpiresIn,
+    });
+    
+    return { access_token: access_token, refresh_token: refresh_token };
+  } catch (err) {
+    throw new UnauthorizedException('Invalid or expired refresh token');
+  }
 }
-  async login(loginDto: LoginDto): Promise<{ access_token: string }> {
+  async login(loginDto: LoginDto): Promise<{ access_token: string, refresh_token: string }> {
     const { username, password, companyCode } = loginDto;
     const company = await this.userRepository.manager
       .getRepository(Company)
-      .findOne({ where: { code: companyCode}, relations: ['users'] });
+      .findOne({ where: { code: companyCode }, relations: ['users'] });
 
     if (!company) {
       throw new UnauthorizedException('Invalid company code');
     }
 
-    const user = await this.userRepository.findOne({ 
+    const user = await this.userRepository.findOne({
       where: { username, company: { id: company.id } },
       relations: ['company']
     });
@@ -93,10 +142,20 @@ async createUser(createUserDto: CreateUserDto, manager: JwtPayload): Promise<Use
       throw new UnauthorizedException('Identifiants invalides');
     }
 
-    const payload = { username: user.username, sub: user.id, role: user.role, companyId: company.id };
-    const token = this.jwtService.sign(payload);
+    const payload = { username: user.username, sub: user.id, role: user.role, companyId: company.id, companyCode: company.code } as JwtPayload;
 
-    return { access_token: token };
+    const access_token = this.jwtService.sign(payload, {
+      secret: this.accessSecret,
+      expiresIn: this.accessExpiresIn,
+    });
+
+    const refresh_token = this.jwtService.sign(payload, {
+      secret: this.refreshSecret,
+      expiresIn: this.refreshExpiresIn,
+    });
+
+    console.log('Login successful for user:', refresh_token);
+    return { access_token: access_token, refresh_token: refresh_token };
   }
 
   async deleteUser(userId: number, manager: JwtPayload): Promise<void> {

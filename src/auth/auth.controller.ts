@@ -25,7 +25,7 @@ export class AuthController {
     return this.authService.createUser(createUserDto, manager);
   }
   @Post('login')
-  async login(@Body() loginDto: LoginDto): Promise<{ access_token: string }> {
+  async login(@Body() loginDto: LoginDto): Promise<{ access_token: string, refresh_token: string }> {
     return this.authService.login(loginDto);
   }
   @Post('logout')
@@ -33,6 +33,12 @@ export class AuthController {
   async logout(@ConnectedUser() user: JwtPayload) {
     return this.authService.logout(user);
   }
+  @Post("refresh")
+  async refresh(@Body() body: { refreshToken: string }): Promise<{ access_token: string, refresh_token: string }> {
+    console.log('Refresh token request received:', body.refreshToken);
+    return this.authService.refresh(body.refreshToken);
+  }
+
   @Delete('delete-user/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles([Role.MANAGER])
@@ -42,4 +48,5 @@ export class AuthController {
   ) {
     return this.authService.deleteUser(id, manager);
   }
+
 }

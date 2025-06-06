@@ -2,6 +2,7 @@ import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { User } from '../../user/entities/user.entity';
 import { UserService } from '../../user/user.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UnauthorizedException } from '@nestjs/common';
 
 @Resolver(() => User)
 export class UserResolver {
@@ -33,7 +34,7 @@ export const UserType = {
 export const UserQuery = {
   async users(_parent: any, _args: any, context: any) {
     if (!context.user) {
-      throw new Error('Authentication required');
+      throw new UnauthorizedException('Authentification required');
     }
     
     return context.userService.findAll();
@@ -41,7 +42,7 @@ export const UserQuery = {
 
   async user(_parent: any, args: { id: string }, context: any) {
     if (!context.user) {
-      throw new Error('Authentication required');
+      throw new UnauthorizedException('Authentification required');
     }
 
     return context.userService.findOne(parseInt(args.id));
@@ -49,7 +50,7 @@ export const UserQuery = {
 
   async userByUsername(_parent: any, args: { username: string, companyId: string }, context: any) {
     if (!context.user) {
-      throw new Error('Authentication required');
+      throw new UnauthorizedException('Authentification required');
     }
 
     return context.userService.findOneByUsername(args.username, parseInt(args.companyId));
@@ -57,7 +58,7 @@ export const UserQuery = {
 
   async usersByCompany(_parent: any, args: { companyId: string }, context: any) {
     if (!context.user) {
-      throw new Error('Authentication required');
+      throw new UnauthorizedException('Authentification required');
     }
 
     return context.userService.getUsersByCompany(parseInt(args.companyId));
@@ -65,7 +66,7 @@ export const UserQuery = {
 
   async deletedUsers(_parent: any, _args: any, context: any) {
     if (!context.user) {
-      throw new Error('Authentication required');
+      throw new UnauthorizedException('Authentification required');
     }
 
     return context.userService.findDeleted();
@@ -76,7 +77,7 @@ export const UserQuery = {
 export const UserMutation = {
   async updateUser(_parent: any, args: { id: string, input: any }, context: any) {
     if (!context.user) {
-      throw new Error('Authentication required');
+      throw new UnauthorizedException('Authentification required');
     }
 
     const updateUserDto = {
@@ -92,7 +93,7 @@ export const UserMutation = {
 
   async deleteUser(_parent: any, args: { id: string }, context: any) {
     if (!context.user) {
-      throw new Error('Authentication required');
+      throw new UnauthorizedException('Authentification required');
     }
 
     try {
@@ -107,7 +108,7 @@ export const UserMutation = {
 
   async recoverUser(_parent: any, args: { id: string }, context: any) {
     if (!context.user) {
-      throw new Error('Authentication required');
+      throw new UnauthorizedException('Authentification required');
     }
 
     try {

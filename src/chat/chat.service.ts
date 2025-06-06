@@ -110,11 +110,7 @@ export class ChatService {
     const chat = await this.chatRepository.findOne({
       where: { id: sendMessageDto.chatId, company: { code: user.companyCode } },
     });
-
-    if (!chat) {
-      throw new NotFoundException('Chat not found or access denied');
-    }
-
+    
     const sender = await this.userRepository.findOne({
       where: { id: user.sub },
     });
@@ -122,6 +118,12 @@ export class ChatService {
     if (!sender) {
       throw new UnauthorizedException('User not found');
     }
+    if (!chat) {
+      throw new NotFoundException('Chat not found or access denied');
+    }
+
+
+    
 
     const message = this.messageRepository.create({
       content: sendMessageDto.content,

@@ -1,15 +1,13 @@
-// src/graphql/yoga-server.ts
 import { createYoga } from 'graphql-yoga';
 import { createSchema } from 'graphql-yoga';
 import { Query } from './graphql/resolvers/query';
-import { EventQuery } from './graphql/resolvers/event.resolver'; // ✅ NEW
+import { EventQuery } from './graphql/resolvers/event.resolver';
 
 import { INestApplicationContext } from '@nestjs/common';
-import { JwtExtractorService } from 'src/auth/Jwt.extractor.service';
+import { AuthService } from 'src/auth/auth.service'; // ✅ Import AuthService
 import { NoteService } from 'src/note/note.service';
 import { NoteLineService } from 'src/note/noteLine.service';
 import * as fs from 'fs';
-import * as jwt from 'jsonwebtoken';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import * as path from 'path';
@@ -22,10 +20,10 @@ import { TaskQuery, TaskMutation, Task } from './graphql/resolvers/task.resolver
 import { UserQuery, UserMutation, UserType } from './graphql/resolvers/user.resolvers';
 import { TaskService } from './task/task.service';
 import { EventsService } from './events/events.service';
+import { JwtService } from '@nestjs/jwt';
+import { UnauthorizedException } from '@nestjs/common';
 
-    
 export function createYogaServer(app: INestApplicationContext) {
-  const jwtExtractor = app.get(JwtExtractorService);
   const noteService = app.get(NoteService);
   const noteLineService = app.get(NoteLineService);
   const userService = app.get(UserService); 
@@ -34,56 +32,61 @@ export function createYogaServer(app: INestApplicationContext) {
   const configService = app.get(ConfigService);
   const taskService = app.get(TaskService);
   const eventEmitter = app.get(EventEmitter2);
+  const jwtService = app.get(JwtService); // ✅ Use Nest's JwtService
+  const authService = app.get(AuthService); // ✅ Get AuthService instance
 
-  const secret = configService.get('JWT_SECRET');
+  const accessSecret = configService.get<string>('JWT_SECRET');
 
   return createYoga({
     schema: createSchema({
-  typeDefs: fs.readFileSync(
-    path.join(__dirname, "../src/graphql/schema.graphql"),
-    "utf-8"
-  ),resolvers:{
-     Query: {
-       ...Query,
-       ...TaskQuery,
-        ...EventQuery ,
-       ...UserQuery
-     },
-     Mutation: {
-       ...TaskMutation,
-       ...UserMutation
-     },
-     NoteLine,
-     Operation,
-     Task,
-     Event,
-     User: UserType
-    } }),
+      typeDefs: fs.readFileSync(
+        path.join(__dirname, "../src/graphql/schema.graphql"),
+        "utf-8"
+      ),
+      resolvers: {
+        Query: {
+          ...Query,
+          ...TaskQuery,
+          ...EventQuery,
+          ...UserQuery,
+        },
+        Mutation: {
+          ...TaskMutation,
+          ...UserMutation,
+        },
+        NoteLine,
+        Operation,
+        Task,
+        Event,
+        User: UserType,
+      }
+    }),
 
     context: async ({ request }) => {
-      // Extract JWT
-      const token = request.headers.get('authorization')?.replace('Bearer ', '');
-      console.log('Token received:', token);
-let user: any = null;
+      const authHeader = request.headers.get('authorization');
+      const token = authHeader?.replace('Bearer ', '');
+      let user: any = null;
 
-if (token) {
-  try {
-    const decodedJwt = jwt.verify(token, secret as string) as any;
-    user = await jwtExtractor.validatePayload(decodedJwt); 
-    console.log('Decoded JWT:', decodedJwt);
-    if (!user) {
-      throw new Error('User not found');
-    }
-  } catch (e) {
-  }
-}else{
-  console.warn('No token provided');
-}
-
+      if (token) {
+        try {
+          const payload = await jwtService.verifyAsync(token, { secret: accessSecret });
+          user = {
+            userId: payload.sub,
+            username: payload.username,
+            role: payload.role,
+            companyCode: payload.companyCode,
+          };
+        } catch (e) {
+          console.warn('Invalid token:', e.message);
+          throw new UnauthorizedException('Invalid token');
+        }
+      } else {
+        console.warn('No token provided');
+      }
 
       return {
         companyCode: user?.companyCode || null,
-        user, 
+        user,
         eventsService: app.get(EventsService),
         noteService,
         noteLineService,
