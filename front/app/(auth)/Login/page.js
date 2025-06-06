@@ -31,9 +31,10 @@ export default function Login() {
       })
 
       // Success - handle token & redirect
-      const { access_token } = response.data
+      const { access_token, refresh_token } = response.data
       localStorage.setItem('token', access_token)
-      router.push('/dashboard/users')
+      localStorage.setItem('refresh_token', refresh_token)
+      router.push('/dashboard')
 
     } catch (err) {
       // Axios wraps errors, so we check for response data
@@ -45,7 +46,7 @@ export default function Login() {
 
   return (
     <div className="login-container">
-      <form className="login-form" onSubmit={handleLogin}>
+      <form className="login-form" onSubmit={handleLogin} suppressHydrationWarning={true}>
         <h2 className="title">Login</h2>
         
         {error && <div className="error-message">{error}</div>}
