@@ -46,7 +46,8 @@ const UPDATE_TASK = gql`
 
 const TasksPage = () => {
   const { user, token } = useAuth();
-  
+  const date = new Date();
+  console.log("Current Date:", date);
   
   const { data, loading, error, refetch } = useQuery(GET_TASKS_BY_USER, {
     variables: { userId: user?.id?.toString() },
@@ -188,7 +189,7 @@ const toggleTaskCompletion = async (taskId, currentCompleted) => {
                 {tasks.map((task) => (
                   <div
                     key={task.id}
-                    className={`${styles.taskItem} ${task.completed ? styles.taskCompleted : styles.taskPending}`}
+                    className={`${styles.taskItem} ${task.completed ? styles.taskCompleted : date > new Date(formatDate(task.dueDate))?  styles.taskPending : styles.taskMissed}`}
                   >
                     <div className={styles.taskContent}>
                       <div className={styles.taskLeft}>
@@ -215,8 +216,8 @@ const toggleTaskCompletion = async (taskId, currentCompleted) => {
                           </div>
                         </div>
                       </div>
-                      <div className={`${styles.statusBadge} ${task.completed ? styles.statusCompleted : styles.statusPending}`}>
-                        {task.completed ? 'Completed' : 'Pending'}
+                      <div className={`${styles.statusBadge} ${task.completed ? styles.statusCompleted : date < new Date(formatDate(task.dueDate)) ? styles.statusMissed :styles.statusPending}`}>
+                        {task.completed ? 'Completed' : date < new Date(formatDate(task.dueDate)) ?  "Missed" : 'Pending'}
                       </div>
                     </div>
                   </div>

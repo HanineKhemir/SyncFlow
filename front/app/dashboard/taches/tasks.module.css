@@ -140,6 +140,10 @@
 .taskPending {
   background-color: white;
 }
+.taskMissed {
+  background-color: #fee2e2;
+  border-color: #fca5a5;
+}
 
 .taskContent {
   display: flex;
@@ -218,6 +222,10 @@
 .statusPending {
   background-color: #fef3c7;
   color: #92400e;
+}
+.statusMissed {
+  background-color: #fecaca;
+  color: #b91c1c;
 }
 
 .statsCard {
