@@ -323,21 +323,7 @@ export default function History() {
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <h1>Company History & Tasks</h1>
-                <div className={styles.tabs}>
-                    <button
-                        className={`${styles.tab} ${activeTab === 'operations' ? styles.active : ''}`}
-                        onClick={() => setActiveTab('operations')}
-                    >
-                        Operations History
-                    </button>
-                    <button
-                        className={`${styles.tab} ${activeTab === 'tasks' ? styles.active : ''}`}
-                        onClick={() => setActiveTab('tasks')}
-                    >
-                        Tasks
-                    </button>
-                </div>
+                <h1>Company History </h1>
             </div>
 
             {/* Real-time Events Indicator */}

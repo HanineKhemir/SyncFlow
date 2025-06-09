@@ -354,7 +354,7 @@ const CollaborativeNotes = () => {
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <h2>Collaborative Note #{noteId}</h2>
+                <h2>Collaborative Note</h2>
                 <div className={`${styles.connectionStatus} ${isConnected ? styles.connected : styles.disconnected}`}>
                     {isConnected ? 'Connected' : 'Disconnected'}
                 </div>
