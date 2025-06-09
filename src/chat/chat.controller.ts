@@ -19,7 +19,9 @@ import { ConnectedUser } from 'src/auth/decorator/user.decorator';
 import { JwtPayload } from 'src/auth/jwt-payload.interface';
 import { Role } from 'src/enum/role.enum';
 
+
 @Controller('chat')
+
 @UseGuards(JwtAuthGuard)
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
@@ -60,11 +62,12 @@ export class ChatController {
 
   @Delete(':id')
   @UseGuards(RolesGuard)
-  @Roles([Role.MANAGER, Role.MANAGER])
+  @Roles([Role.MANAGER])
   async deleteChat(
     @Param('id', ParseIntPipe) chatId: number,
     @ConnectedUser() user: JwtPayload,
   ) {
+
     return this.chatService.deleteChat(chatId, user);
   }
 }

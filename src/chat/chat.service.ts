@@ -151,7 +151,7 @@ export class ChatService {
     const chat = await this.chatRepository.findOne({
       where: { id: chatId, company: { code: user.companyCode } },
     });
-
+    console.log('Chat to delete:', chat);
     if (!chat) {
       throw new NotFoundException('Chat not found or access denied');
     }
