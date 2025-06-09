@@ -294,13 +294,13 @@ export default function Dashboard() {
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const STORAGE_KEY = 'dashboard_recent_activities';
   useEffect(() => {
-    // Force re-render when page is visited
+    refetchTodayEvents(); 
     setPageKey(prev => prev + 1);
   }, [router.asPath]);
   const todayISOString = new Date().toISOString().split('T')[0] + "T00:00:00.000Z";
 
 
-const { data: todayEventsData } = useQuery(GET_TODAYS_EVENTS, {
+const { data: todayEventsData,  refetch: refetchTodayEvents } = useQuery(GET_TODAYS_EVENTS, {
   variables: { date: todayISOString },
   skip: !token,
   context: {
@@ -309,7 +309,7 @@ const { data: todayEventsData } = useQuery(GET_TODAYS_EVENTS, {
     },
   },
 });
-const { data: todayTasksData } = useQuery(GET_TODAYS_TASKS, {
+const { data: todayTasksData,refetch: refetchTodayTasks } = useQuery(GET_TODAYS_TASKS, {
   variables: { date: todayISOString },
   skip: !token,
   context: {
@@ -365,8 +365,16 @@ const { data: todayTasksData } = useQuery(GET_TODAYS_TASKS, {
       await createTaskMutation({
         variables: {
           input: taskData
-        }
+        },
+          onCompleted: () => {
+        
+        refetch(); // Refetches GET_TASK_STATS
+        refetchTodayTasks(); 
+        refetchTodayEvents(); 
+         setIsAddTaskModalOpen(false);
+      }
       });
+
     } catch (error) {
       console.error('Error in handleCreateTask:', error);
     }
