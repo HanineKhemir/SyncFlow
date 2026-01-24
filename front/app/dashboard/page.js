@@ -293,8 +293,7 @@ export default function Dashboard() {
   const [lastRefresh, setLastRefresh] = useState(Date.now());
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const STORAGE_KEY = 'dashboard_recent_activities';
-  useEffect(() => {
-    refetchTodayEvents(); 
+  useEffect(() => { 
     setPageKey(prev => prev + 1);
   }, [router.asPath]);
   const todayISOString = new Date().toISOString().split('T')[0] + "T00:00:00.000Z";
