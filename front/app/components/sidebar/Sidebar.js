@@ -9,8 +9,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/app/hooks/useAuth';
 
-// Reference public assets from root path (no /app/public prefix needed)
-const logo = '/logo.svg';
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -26,17 +24,7 @@ const Sidebar = () => {
 
   return (
     <div className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}>
-      <div className={styles.logo}>
-        {!collapsed && (
-          <Image
-            src={logo}
-            alt="SyncFlow"
-            width={300}
-            height={100}
-            className={styles.logoImage}
-          />
-        )}
-      </div>
+      
 
       <nav className={styles.nav}>
         <ul>
